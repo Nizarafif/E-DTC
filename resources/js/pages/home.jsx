@@ -134,6 +134,7 @@ const Home = () => {
     const [favorites, setFavorites] = useState([]);
     const [books, setBooks] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isAdmin, setIsAdmin] = useState(false);
 
     useEffect(() => {
         // Load favorites
@@ -180,6 +181,17 @@ const Home = () => {
         fetchBooks();
     }, []);
 
+    // Detect admin to show back-to-admin icon button
+    useEffect(() => {
+        try {
+            const token = localStorage.getItem("auth_token");
+            if (token) {
+                const parsed = JSON.parse(token);
+                if (parsed?.role === "admin") setIsAdmin(true);
+            }
+        } catch (_) {}
+    }, []);
+
     const openModal = (book) => {
         setCurrentBook(book);
         setModalOpen(true);
@@ -200,6 +212,22 @@ const Home = () => {
             localStorage.setItem("favorites", JSON.stringify(next));
             return next;
         });
+    };
+
+    const formatCode = (code) => {
+        const base = (code || "KODE PRODUKSI").trim();
+        return base.endsWith("/") ? base : `${base}/`;
+    };
+
+    const codeWithoutSlash = (code) => {
+        const base = (code || "KODE PRODUKSI").trim();
+        return base.replace(/\/+$/g, "");
+    };
+
+    const getLanguageLabel = (lang) => {
+        if (!lang) return "Bahasa Indonesia";
+        const map = { id: "Bahasa Indonesia", en: "English" };
+        return map[lang] || lang;
     };
 
     return (
@@ -276,7 +304,7 @@ const Home = () => {
                                 DestinasiTerbaik
                             </h2>
                         </div>
-                        <div>
+                        <div className="flex items-center gap-3">
                             <img
                                 src="/images/logo.png"
                                 alt="DTC Academy"
@@ -329,6 +357,7 @@ const Home = () => {
                                             height: 320,
                                             boxShadow:
                                                 "0 0 20px rgba(0,0,0,0.15), 0 0 40px rgba(0,0,0,0.1)",
+                                            overflow: "hidden",
                                         }}
                                     >
                                         <div className="relative mb-4 flex items-center justify-center">
@@ -350,11 +379,34 @@ const Home = () => {
                                                 }}
                                             />
                                         </div>
-                                        <div className="text-left -mt-4 ml-3">
-                                            <p className="text-base font-bold text-black">
-                                                {book.code || "KODE PRODUKSI/"}
+                                        <div
+                                            className="text-left -mt-4 ml-3"
+                                            style={{
+                                                width: 170,
+                                                overflow: "hidden",
+                                            }}
+                                        >
+                                            <p
+                                                className="text-base font-bold text-black"
+                                                style={{
+                                                    overflow: "hidden",
+                                                    textOverflow: "ellipsis",
+                                                    whiteSpace: "nowrap",
+                                                }}
+                                            >
+                                                {formatCode(book.code)}
                                             </p>
-                                            <p className="text-base font-bold text-black">
+                                            <p
+                                                className="text-base font-bold text-black"
+                                                style={{
+                                                    display: "-webkit-box",
+                                                    WebkitLineClamp: 2,
+                                                    WebkitBoxOrient: "vertical",
+                                                    overflow: "hidden",
+                                                    wordBreak: "break-word",
+                                                    lineHeight: 1.2,
+                                                }}
+                                            >
                                                 {book.title || "Nama Buku"}
                                             </p>
                                         </div>
@@ -386,7 +438,7 @@ const Home = () => {
                             }}
                         >
                             <h3 className="text-white font-bold text-lg">
-                                {currentBook?.code || "KODE PRODUKSI/"}
+                                {codeWithoutSlash(currentBook?.code)}
                             </h3>
                             <button
                                 onClick={closeModal}
@@ -432,8 +484,9 @@ const Home = () => {
                                 <div className="flex justify-between items-start mb-2">
                                     <div className="ml-1">
                                         <h4 className="text-lg font-bold text-gray-800 mb-1">
-                                            {currentBook?.code ||
-                                                "KODE PRODUKSI/"}
+                                            {codeWithoutSlash(
+                                                currentBook?.code
+                                            )}
                                         </h4>
                                         <p className="text-sm text-gray-600 mb-2">
                                             {currentBook?.author ||
@@ -468,17 +521,20 @@ const Home = () => {
                                 <div className="flex items-center text-sm text-gray-600 mb-2">
                                     <svg
                                         className="w-4 h-4 mr-2"
-                                        fill="currentColor"
-                                        viewBox="0 0 20 20"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
                                     >
                                         <path
-                                            fillRule="evenodd"
-                                            d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                                            clipRule="evenodd"
-                                        ></path>
+                                            strokeWidth="2"
+                                            d="M12 2a10 10 0 100 20 10 10 0 000-20z"
+                                        />
+                                        <path
+                                            strokeWidth="2"
+                                            d="M2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20"
+                                        />
                                     </svg>
-                                    {currentBook?.language ||
-                                        "Bahasa Indonesia"}
+                                    {getLanguageLabel(currentBook?.language)}
                                 </div>
                                 <div className="flex items-center text-sm text-gray-600 mb-3">
                                     <svg
@@ -568,6 +624,27 @@ const Home = () => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {isAdmin && (
+                <Link
+                    to="/admin"
+                    className="fixed z-50 bottom-5 right-5 inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#113939] text-white shadow-lg hover:opacity-90 transition"
+                    title="Kembali ke Dashboard Admin"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        className="w-5 h-5"
+                    >
+                        <path
+                            strokeWidth="2"
+                            d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"
+                        />
+                    </svg>
+                </Link>
             )}
         </div>
     );

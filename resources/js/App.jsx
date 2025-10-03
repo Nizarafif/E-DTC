@@ -110,13 +110,22 @@ function App() {
         );
     }
 
+    // Admin can access both user pages and admin dashboard
     return (
         <ChakraProvider theme={theme}>
             <BrowserRouter>
                 <Routes>
+                    {/* Admin Dashboard */}
                     <Route
                         path="/admin"
                         element={<AdminDashboard onLogout={handleLogout} />}
+                    />
+                    {/* User-facing pages accessible to admin for monitoring */}
+                    <Route path="/" element={<Home />} />
+                    <Route path="/favorite" element={<Favorite />} />
+                    <Route
+                        path="/tinjauan-pustaka/:id"
+                        element={<TinjauanPustaka />}
                     />
                     <Route
                         path="*"

@@ -55,9 +55,11 @@ const SidebarLink = ({ icon, label, active, as = "a" }) => {
 };
 
 const Favorite = () => {
-    const [favorites, setFavorites] = useState([]);
+    const [favorites, setFavorites] = useState([]); // array of book ids
+    const [books, setBooks] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [modalOpen, setModalOpen] = useState(false);
-    const [selectedId, setSelectedId] = useState(null);
+    const [currentBook, setCurrentBook] = useState(null);
 
     useEffect(() => {
         try {
@@ -66,12 +68,32 @@ const Favorite = () => {
         } catch (_) {
             setFavorites([]);
         }
+
+        const fetchBooks = async () => {
+            try {
+                setLoading(true);
+                const res = await fetch("/books");
+                if (res.ok) {
+                    const data = await res.json();
+                    setBooks(Array.isArray(data) ? data : []);
+                } else {
+                    setBooks([]);
+                }
+            } catch (_) {
+                setBooks([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchBooks();
     }, []);
 
-    const hasFavorites = useMemo(
-        () => favorites && favorites.length > 0,
-        [favorites]
-    );
+    const favoritesBooks = useMemo(() => {
+        if (!favorites || favorites.length === 0) return [];
+        const idSet = new Set(favorites.map(String));
+        return books.filter((b) => idSet.has(String(b.id)));
+    }, [favorites, books]);
+    const hasFavorites = favoritesBooks.length > 0;
 
     const removeFavorite = (id) => {
         try {
@@ -82,6 +104,25 @@ const Favorite = () => {
             localStorage.setItem("favorites", JSON.stringify(next));
             setFavorites(next);
         } catch (_) {}
+    };
+
+    const openModal = (book) => {
+        setCurrentBook(book);
+        setModalOpen(true);
+    };
+
+    const formatCode = (code) => {
+        const base = (code || "KODE PRODUKSI").trim();
+        return base.endsWith("/") ? base : `${base}/`;
+    };
+    const codeWithoutSlash = (code) => {
+        const base = (code || "KODE PRODUKSI").trim();
+        return base.replace(/\/+$/g, "");
+    };
+    const getLanguageLabel = (lang) => {
+        if (!lang) return "Bahasa Indonesia";
+        const map = { id: "Bahasa Indonesia", en: "English" };
+        return map[lang] || lang;
     };
 
     return (
@@ -97,15 +138,15 @@ const Favorite = () => {
                                     alt="Profile"
                                     className="w-full h-full object-cover"
                                 />
-          </div>
+                            </div>
                             <div className="text-white">
                                 <h3 className="font-bold text-lg">NAMA</h3>
                                 <p className="text-white text-sm">
                                     email@gmail.com
                                 </p>
-          </div>
-        </div>
-      </div>
+                            </div>
+                        </div>
+                    </div>
                     <nav className="flex-1 p-6 mt-4">
                         <ul className="space-y-4">
                             <li>
@@ -116,22 +157,22 @@ const Favorite = () => {
                                         as="div"
                                     />
                                 </Link>
-          </li>
-          <li>
+                            </li>
+                            <li>
                                 <SidebarLink
                                     icon="/images/heart 2.svg"
                                     label="Favorit"
                                     active
                                 />
-          </li>
-        </ul>
-      </nav>
-    </div>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
 
                 {/* Main content */}
                 <div className="flex-1 bg-white w-full">
                     <div className="flex justify-between items-center p-6">
-        <div>
+                        <div>
                             <h1 className="text-2xl font-bold text-[#113939]">
                                 Favorit Buku
                             </h1>
@@ -142,8 +183,8 @@ const Favorite = () => {
                                 alt="DTC Academy"
                                 className="h-20"
                             />
-        </div>
-      </div>
+                        </div>
+                    </div>
 
                     <div className="p-6">
                         {!hasFavorites && (
@@ -153,9 +194,9 @@ const Favorite = () => {
                         )}
                         {hasFavorites && (
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 justify-items-center">
-                                {favorites.map((id, idx) => (
+                                {favoritesBooks.map((book) => (
                                     <div
-                                        key={id + String(idx)}
+                                        key={book.id}
                                         className="book-card bg-white rounded-lg p-3 hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-2 cursor-pointer"
                                         style={{
                                             width: 190,
@@ -163,14 +204,14 @@ const Favorite = () => {
                                             boxShadow:
                                                 "0 0 20px rgba(0,0,0,0.15), 0 0 40px rgba(0,0,0,0.1)",
                                         }}
-                                        onClick={() => {
-                                            setSelectedId(id);
-                                            setModalOpen(true);
-                                        }}
+                                        onClick={() => openModal(book)}
                                     >
                                         <div className="relative mb-4 flex items-center justify-center">
                                             <img
-                                                src="/images/Image-Cover Buku.svg"
+                                                src={
+                                                    book.cover ||
+                                                    "/images/Image-Cover Buku.svg"
+                                                }
                                                 alt="Book Cover"
                                                 className="object-cover rounded-lg"
                                                 style={{
@@ -178,22 +219,43 @@ const Favorite = () => {
                                                     height: 250,
                                                     filter: "drop-shadow(0px 4px 4px rgba(0,0,0,0.25))",
                                                 }}
+                                                onError={(e) => {
+                                                    e.currentTarget.src =
+                                                        "/images/Image-Cover Buku.svg";
+                                                }}
                                             />
                                         </div>
                                         <div className="px-2 -mt-4 pb-4">
-                                            <p className="text-base font-bold text-black">
-                                                KODE PRODUKSI/
+                                            <p
+                                                className="text-base font-bold text-black"
+                                                style={{
+                                                    overflow: "hidden",
+                                                    textOverflow: "ellipsis",
+                                                    whiteSpace: "nowrap",
+                                                }}
+                                            >
+                                                {formatCode(book.code)}
                                             </p>
                                             <div className="flex items-baseline justify-between">
-                                                <p className="text-base font-bold text-black">
-                                                    Nama Buku
+                                                <p
+                                                    className="text-base font-bold text-black"
+                                                    style={{
+                                                        display: "-webkit-box",
+                                                        WebkitLineClamp: 2,
+                                                        WebkitBoxOrient:
+                                                            "vertical",
+                                                        overflow: "hidden",
+                                                        lineHeight: 1.2,
+                                                    }}
+                                                >
+                                                    {book.title || "Nama Buku"}
                                                 </p>
                                                 <button
                                                     className="ml-2 -mt-1"
                                                     title="Hapus dari Favorit"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        removeFavorite(id);
+                                                        removeFavorite(book.id);
                                                     }}
                                                 >
                                                     <img
@@ -202,23 +264,23 @@ const Favorite = () => {
                                                         className="w-5 h-5"
                                                     />
                                                 </button>
-      </div>
-    </div>
-  </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
                         )}
                     </div>
-          </div>
+                </div>
             </div>
 
-            {/* Modal Overlay (placeholder content, same visual) */}
-            {modalOpen && (
+            {/* Modal Overlay (same as Home) */}
+            {modalOpen && currentBook && (
                 <div
                     className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 flex items-center justify-center"
                     onClick={() => {
                         setModalOpen(false);
-                        setSelectedId(null);
+                        setCurrentBook(null);
                     }}
                 >
                     <div
@@ -235,7 +297,7 @@ const Favorite = () => {
                             }}
                         >
                             <h3 className="text-white font-bold text-lg">
-                                KODE PRODUKSI
+                                {codeWithoutSlash(currentBook?.code)}
                             </h3>
                             <button
                                 onClick={() => setModalOpen(false)}
@@ -247,8 +309,8 @@ const Favorite = () => {
                                     alt="Tutup"
                                     className="w-6 h-6 transition-transform group-hover:rotate-90"
                                 />
-        </button>
-      </div>
+                            </button>
+                        </div>
                         <div
                             className="relative flex items-center"
                             style={{
@@ -257,49 +319,58 @@ const Favorite = () => {
                                 background: "#E3CD98",
                             }}
                         >
-                            <img
-                                src="/images/red love.svg"
-                                alt="Favorit"
-                                className="w-6 h-6 absolute top-6 right-2"
-                            />
                             <div
                                 className="ml-8"
                                 style={{ width: 133, height: 187 }}
                             >
                                 <img
-                                    src="/images/Image-Cover Buku.svg"
+                                    src={
+                                        currentBook?.cover ||
+                                        "/images/Image-Cover Buku.svg"
+                                    }
                                     alt="Book Cover"
                                     className="w-full h-full object-cover rounded-lg"
                                     style={{
                                         filter: "drop-shadow(0px 4px 4px rgba(0,0,0,0.25))",
                                     }}
+                                    onError={(e) =>
+                                        (e.currentTarget.src =
+                                            "/images/Image-Cover Buku.svg")
+                                    }
                                 />
-        </div>
+                            </div>
                             <div className="ml-6 flex-1">
                                 <div className="flex justify-between items-start mb-2">
                                     <div className="ml-1">
                                         <h4 className="text-lg font-bold text-gray-800 mb-1">
-                                            KODE PRODUKSI
+                                            {codeWithoutSlash(
+                                                currentBook?.code
+                                            )}
                                         </h4>
                                         <p className="text-sm text-gray-600 mb-2">
-                                            [Tim Penyusun]
+                                            {currentBook?.author ||
+                                                "Tim Penyusun"}
                                         </p>
-            </div>
-          </div>
+                                    </div>
+                                </div>
                                 <div className="flex items-center text-sm text-gray-600 mb-2">
                                     <svg
                                         className="w-4 h-4 mr-2"
-                                        fill="currentColor"
-                                        viewBox="0 0 20 20"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
                                     >
                                         <path
-                                            fillRule="evenodd"
-                                            d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                                            clipRule="evenodd"
+                                            strokeWidth="2"
+                                            d="M12 2a10 10 0 100 20 10 10 0 000-20z"
+                                        />
+                                        <path
+                                            strokeWidth="2"
+                                            d="M2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20"
                                         />
                                     </svg>
-            Bahasa Indonesia
-          </div>
+                                    {getLanguageLabel(currentBook?.language)}
+                                </div>
                                 <div className="flex items-center text-sm text-gray-600 mb-3">
                                     <svg
                                         className="w-4 h-4 mr-2"
@@ -313,23 +384,23 @@ const Favorite = () => {
                                             clipRule="evenodd"
                                         />
                                     </svg>
-            235
-          </div>
+                                    {currentBook?.pages || 235}
+                                </div>
                                 <Link
                                     to={`/tinjauan-pustaka/${String(
-                                        selectedId || ""
+                                        currentBook?.id || ""
                                     )}`}
                                     className="inline-flex items-center text-white font-semibold rounded px-6 py-1 w-auto"
                                     style={{ background: "#113939" }}
                                     onClick={() => {
                                         setModalOpen(false);
-                                        setSelectedId(null);
+                                        setCurrentBook(null);
                                     }}
                                 >
                                     Baca
                                 </Link>
-        </div>
-      </div>
+                            </div>
+                        </div>
                         <div
                             className="flex p-4"
                             style={{
@@ -343,13 +414,24 @@ const Favorite = () => {
                                     Detail Buku
                                 </h5>
                                 <div className="space-y-0.5 text-xs text-gray-600">
-            <p>Tanggal Terbit : 2024-05-12</p>
-            <p>Terakhir Diperbarui 2025-09-19</p>
-            <p>Penerbit : [Nama Penerbit]</p>
-            <p>Hak cipta : [Nama Penulis]</p>
-            <p>ISBN : 978-xxx-xxxx-xxxx</p>
-          </div>
-        </div>
+                                    <p>
+                                        Tanggal Terbit :{" "}
+                                        {currentBook?.publish_date ||
+                                            "2024-05-12"}
+                                    </p>
+                                    <p>Terakhir Diperbarui 2025-09-19</p>
+                                    <p>Penerbit : [Nama Penerbit]</p>
+                                    <p>
+                                        Hak cipta :{" "}
+                                        {currentBook?.author || "Nama Penulis"}
+                                    </p>
+                                    <p>
+                                        ISBN :{" "}
+                                        {currentBook?.isbn ||
+                                            "978-xxx-xxxx-xxxx"}
+                                    </p>
+                                </div>
+                            </div>
                             <div className="w-2/3 pl-3">
                                 <h5 className="text-sm font-bold text-gray-800 mb-1">
                                     Ringkasan
@@ -358,14 +440,13 @@ const Favorite = () => {
                                     className="text-xs text-gray-600 leading-relaxed text-justify"
                                     style={{ color: "#113939" }}
                                 >
-                                    Ringkasan isi buku akan ditampilkan di sini.
-                                    Teks ini hanya contoh (dummy text) dan akan
-                                    diganti setelah ringkasan resmi tersedia.
+                                    {currentBook?.description ||
+                                        "Ringkasan isi buku akan ditampilkan di sini. Teks ini hanya contoh (dummy text) dan akan diganti setelah ringkasan resmi tersedia."}
                                 </p>
-        </div>
-      </div>
-    </div>
-  </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

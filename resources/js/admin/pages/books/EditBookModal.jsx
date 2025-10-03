@@ -80,13 +80,13 @@ const EditBookModal = ({ isOpen, onClose, book, onBookUpdated }) => {
                 author: book.author || "",
                 category: book.category || "",
                 description: book.description || "",
-                publishDate: book.publishDate || "",
+                publishDate: book.publish_date || "",
                 isbn: book.isbn || "",
-                pages: book.pages || "",
+                pages: String(book.pages || ""),
                 language: book.language || "id",
                 status: book.status || "draft",
             });
-            setCoverPreview(book.coverImage || null);
+            setCoverPreview(book.cover || null);
         }
     }, [book]);
 
@@ -160,16 +160,33 @@ const EditBookModal = ({ isOpen, onClose, book, onBookUpdated }) => {
                 return;
             }
 
-            // Simulasi API call
-            await new Promise((resolve) => setTimeout(resolve, 1500));
+            // Kirim ke API (real update)
+            const formDataToSend = new FormData();
+            formDataToSend.append("title", formData.title);
+            formDataToSend.append("author", formData.author);
+            formDataToSend.append("category", formData.category);
+            formDataToSend.append("description", formData.description || "");
+            formDataToSend.append("publish_date", formData.publishDate || "");
+            formDataToSend.append("isbn", formData.isbn || "");
+            formDataToSend.append("pages", formData.pages || "");
+            formDataToSend.append("language", formData.language);
+            formDataToSend.append("status", formData.status);
+            if (coverImage) {
+                formDataToSend.append("cover", coverImage);
+            }
 
-            // Create updated book object
-            const updatedBook = {
-                ...book,
-                ...formData,
-                coverImage: coverPreview,
-                updatedAt: new Date().toISOString(),
-            };
+            // Laravel requires method spoofing for file uploads with PUT
+            formDataToSend.append("_method", "PUT");
+            const response = await fetch(`/books/${book.id}`, {
+                method: "POST",
+                headers: { Accept: "application/json" },
+                body: formDataToSend,
+            });
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || "Gagal memperbarui buku");
+            }
+            const updatedBook = await response.json();
 
             toast({
                 title: "Berhasil",

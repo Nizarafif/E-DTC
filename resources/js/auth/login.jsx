@@ -7,6 +7,7 @@ const Login = ({ onLogin }) => {
         password: "",
     });
     const [isLoading, setIsLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -117,14 +118,26 @@ const Login = ({ onLogin }) => {
                             whileFocus={{ scale: 1.02 }}
                             transition={{ duration: 0.2 }}
                         >
-                        <input 
-                            type="email" 
-                            name="email"
-                            placeholder="Email" 
+                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    className="w-5 h-5"
+                                >
+                                    <path strokeWidth="2" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z" />
+                                    <path strokeWidth="2" d="M4 20c0-2.21 3.58-4 8-4s8 1.79 8 4" />
+                                </svg>
+                            </span>
+                            <input 
+                                type="email" 
+                                name="email"
+                                placeholder="Email" 
                                 value={formData.email}
                                 onChange={handleInputChange}
-                            required
-                                className="w-full px-3 py-2 sm:py-3 pr-10 bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2D5A5A] focus:border-transparent text-gray-700 placeholder-gray-500 text-sm transition-all duration-200"
+                                required
+                                className="w-full pl-10 px-3 py-2 sm:py-3 pr-10 bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2D5A5A] focus:border-transparent text-gray-700 placeholder-gray-500 text-sm transition-all duration-200"
                             />
                         </motion.div>
 
@@ -133,15 +146,46 @@ const Login = ({ onLogin }) => {
                             whileFocus={{ scale: 1.02 }}
                             transition={{ duration: 0.2 }}
                         >
-                        <input 
-                            type="password" 
-                            name="password"
-                            placeholder="Sandi" 
+                            <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    className="w-5 h-5"
+                                >
+                                    <path strokeWidth="2" d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2z" />
+                                    <path strokeWidth="2" d="M22 6l-10 7L2 6" />
+                                </svg>
+                            </span>
+                            <input 
+                                type={showPassword ? "text" : "password"}
+                                name="password"
+                                placeholder="Sandi" 
                                 value={formData.password}
                                 onChange={handleInputChange}
-                            required
-                                className="w-full px-3 py-2 sm:py-3 pr-10 bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2D5A5A] focus:border-transparent text-gray-700 placeholder-gray-500 text-sm transition-all duration-200"
+                                required
+                                className="w-full pl-10 px-3 py-2 sm:py-3 pr-10 bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#2D5A5A] focus:border-transparent text-gray-700 placeholder-gray-500 text-sm transition-all duration-200"
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword((v) => !v)}
+                                className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
+                                aria-label={showPassword ? "Sembunyikan sandi" : "Tampilkan sandi"}
+                                title={showPassword ? "Sembunyikan sandi" : "Tampilkan sandi"}
+                            >
+                                {showPassword ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5">
+                                        <path strokeWidth="2" d="M3 3l18 18" />
+                                        <path strokeWidth="2" d="M10.58 10.58A2 2 0 0012 14a2 2 0 001.42-3.42M21 12s-3.8-7-9-7c-1.38 0-2.66.38-3.8 1.02M3 12s3.8 7 9 7c1.86 0 3.58-.74 5-1.9" />
+                                    </svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5">
+                                        <path strokeWidth="2" d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" />
+                                        <circle cx="12" cy="12" r="3" strokeWidth="2" />
+                                    </svg>
+                                )}
+                            </button>
                         </motion.div>
 
                         <div className="text-center">

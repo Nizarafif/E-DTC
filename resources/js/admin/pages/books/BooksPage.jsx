@@ -104,12 +104,16 @@ const BooksPage = () => {
     };
 
     const handleUpdateBook = (updatedBook) => {
+        // Optimistic update
         setBooks((prev) =>
             prev.map((book) =>
                 book.id === updatedBook.id ? updatedBook : book
             )
         );
+        // Close modal and refresh list from API to ensure latest data
+        setIsEditModalOpen(false);
         setSelectedBook(null);
+        fetchBooks();
     };
 
     const handleDeleteBook = (book) => {

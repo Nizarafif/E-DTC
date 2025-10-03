@@ -9,6 +9,15 @@ const TinjauanPustaka = () => {
     const [book, setBook] = useState(null);
     const readerRef = useRef(null);
 
+    const formatCode = (code) => {
+        const base = (code || "KODE PRODUKSI").trim();
+        return base.endsWith("/") ? base : `${base}/`;
+    };
+    const codeWithoutSlash = (code) => {
+        const base = (code || "KODE PRODUKSI").trim();
+        return base.replace(/\/+$/g, "");
+    };
+
     const totalPages = book?.totalPages || 18;
     const pageLabel = useMemo(
         () => `${currentPage}/${totalPages}`,
@@ -20,7 +29,7 @@ const TinjauanPustaka = () => {
         const fetchBook = async () => {
             try {
                 if (!id) return;
-                const res = await fetch(`/api/books/${encodeURIComponent(id)}`);
+                const res = await fetch(`/books/${encodeURIComponent(id)}`);
                 if (!res.ok) throw new Error("Failed to fetch");
                 const data = await res.json();
                 if (mounted) setBook(data);
@@ -59,16 +68,20 @@ const TinjauanPustaka = () => {
                                 src={book?.cover || "/images/Cover Buku.svg"}
                                 alt="Cover"
                                 className="w-24 h-32"
+                                onError={(e) =>
+                                    (e.currentTarget.src =
+                                        "/images/Cover Buku.svg")
+                                }
                             />
                             <div>
                                 <p className="text-xs opacity-80">
-                                    {book?.code || "KODE PRODUKSI/"}
+                                    {codeWithoutSlash(book?.code)}
                                 </p>
                                 <p className="text-sm font-semibold leading-tight">
                                     {book?.title || "Nama Buku"}
                                 </p>
                                 <p className="text-[11px] opacity-90 mt-1">
-                                    Nama Penyusun
+                                    {book?.author || "Nama Penyusun"}
                                 </p>
                             </div>
                         </div>
@@ -151,7 +164,7 @@ const TinjauanPustaka = () => {
                         ref={readerRef}
                         className="w-full flex items-center justify-center mt-12"
                     >
-                        <div className="bg-white w-full lg:w-[55%]">
+                        <div className="bg-white w-full md:w-[70%] lg:w-[45%] xl:w-[40%]">
                             <img
                                 src={
                                     book?.cover ||
@@ -159,7 +172,20 @@ const TinjauanPustaka = () => {
                                 }
                                 alt="Halaman Buku"
                                 className="w-full h-full object-cover"
+                                onError={(e) =>
+                                    (e.currentTarget.src =
+                                        "/images/Image-Cover Buku.svg")
+                                }
                             />
+                            <div className="px-4 py-3 border-t border-gray-200">
+                                <p className="text-sm text-gray-700">
+                                    <span className="font-semibold mr-1">
+                                        {codeWithoutSlash(book?.code)}
+                                    </span>
+                                    • {book?.title || "Nama Buku"} •{" "}
+                                    {book?.author || "Nama Penyusun"}
+                                </p>
+                            </div>
                         </div>
                     </div>
 

@@ -126,12 +126,13 @@ class BookController extends Controller
             'isbn' => 'nullable|string|max:20',
             'pages' => 'nullable|integer|min:1',
             'language' => 'nullable|string|max:50',
+            'status' => 'nullable|in:draft,review,published,archived',
             'cover' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         $bookData = $request->only([
             'title', 'code', 'author', 'description', 
-            'publish_date', 'isbn', 'pages', 'language'
+            'publish_date', 'isbn', 'pages', 'language', 'status'
         ]);
 
         if ($request->hasFile('cover')) {

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link as RouterLink } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Box,
@@ -32,6 +33,8 @@ import {
     Moon,
     Sun,
     ChevronRight,
+    Home as HomeIcon,
+    Heart,
 } from "lucide-react";
 
 const Header = ({ title, breadcrumbs, onLogout, sidebarWidth }) => {
@@ -373,6 +376,19 @@ const Header = ({ title, breadcrumbs, onLogout, sidebarWidth }) => {
                                         borderRadius="xl"
                                         overflow="hidden"
                                     >
+                                        <MenuItem
+                                            icon={<HomeIcon size={16} />}
+                                            as={RouterLink}
+                                            to="/"
+                                            _hover={{
+                                                bg: useColorModeValue(
+                                                    "gray.50",
+                                                    "gray.700"
+                                                ),
+                                            }}
+                                        >
+                                            Lihat Home
+                                        </MenuItem>
                                         <MenuItem
                                             icon={<User size={16} />}
                                             _hover={{

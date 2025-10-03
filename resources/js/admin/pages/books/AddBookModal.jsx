@@ -38,6 +38,7 @@ import {
 
 const AddBookModal = ({ isOpen, onClose, onBookAdded }) => {
     const [formData, setFormData] = useState({
+        code: "",
         title: "",
         author: "",
         category: "",
@@ -46,7 +47,7 @@ const AddBookModal = ({ isOpen, onClose, onBookAdded }) => {
         isbn: "",
         pages: "",
         language: "id",
-        status: "draft",
+        status: "published",
     });
     const [coverImage, setCoverImage] = useState(null);
     const [coverPreview, setCoverPreview] = useState(null);
@@ -127,6 +128,7 @@ const AddBookModal = ({ isOpen, onClose, onBookAdded }) => {
 
     const resetForm = () => {
         setFormData({
+            code: "",
             title: "",
             author: "",
             category: "",
@@ -135,7 +137,7 @@ const AddBookModal = ({ isOpen, onClose, onBookAdded }) => {
             isbn: "",
             pages: "",
             language: "id",
-            status: "draft",
+            status: "published",
         });
         setCoverImage(null);
         setCoverPreview(null);
@@ -150,10 +152,16 @@ const AddBookModal = ({ isOpen, onClose, onBookAdded }) => {
 
         try {
             // Validasi form
-            if (!formData.title || !formData.author || !formData.category) {
+            if (
+                !formData.code ||
+                !formData.title ||
+                !formData.author ||
+                !formData.category
+            ) {
                 toast({
                     title: "Error",
-                    description: "Judul, Penulis, dan Kategori wajib diisi",
+                    description:
+                        "Kode Produksi, Judul, Penulis, dan Kategori wajib diisi",
                     status: "error",
                     duration: 3000,
                     isClosable: true,
@@ -172,10 +180,7 @@ const AddBookModal = ({ isOpen, onClose, onBookAdded }) => {
             formDataToSend.append("isbn", formData.isbn || "");
             formDataToSend.append("pages", formData.pages || "");
             formDataToSend.append("language", formData.language);
-            formDataToSend.append(
-                "code",
-                formData.title.replace(/\s+/g, "-").toLowerCase()
-            ); // Generate code from title
+            formDataToSend.append("code", formData.code);
             // Generate unique slug
             const baseSlug = formData.title.replace(/\s+/g, "-").toLowerCase();
             const timestamp = Date.now();
@@ -437,6 +442,34 @@ const AddBookModal = ({ isOpen, onClose, onBookAdded }) => {
                                         </Text>
                                         <VStack spacing={4} align="stretch">
                                             <HStack spacing={4} align="start">
+                                                <FormControl isRequired>
+                                                    <FormLabel
+                                                        fontSize="sm"
+                                                        fontWeight="600"
+                                                    >
+                                                        <HStack spacing={2}>
+                                                            <Tag size={16} />
+                                                            <Text>
+                                                                Kode Produksi
+                                                            </Text>
+                                                        </HStack>
+                                                    </FormLabel>
+                                                    <Input
+                                                        name="code"
+                                                        value={formData.code}
+                                                        onChange={
+                                                            handleInputChange
+                                                        }
+                                                        placeholder="KODE-PRODUKSI/"
+                                                        borderRadius="lg"
+                                                        _focus={{
+                                                            borderColor:
+                                                                "teal.500",
+                                                            boxShadow:
+                                                                "0 0 0 1px teal.500",
+                                                        }}
+                                                    />
+                                                </FormControl>
                                                 <FormControl isRequired>
                                                     <FormLabel
                                                         fontSize="sm"
