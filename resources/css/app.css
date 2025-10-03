@@ -179,3 +179,15 @@
 .gradient-purple {
     background: linear-gradient(135deg, #b794f6 0%, #805ad5 100%);
 }
+
+/* Editor content image sizing */
+.book-editor .ql-editor img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Perkecil gambar yang di-align ke kanan agar tidak terlalu melebar */
+.book-editor .ql-editor p[style*="text-align: right"] img,
+.book-editor .ql-editor .ql-align-right img {
+    max-width: 50%;
+}

@@ -9,6 +9,7 @@ import {
     Divider,
     Tooltip,
     useColorModeValue,
+    Collapse,
 } from "@chakra-ui/react";
 import {
     LayoutDashboard,
@@ -20,7 +21,11 @@ import {
     LogOut,
     ChevronLeft,
     ChevronRight,
+    ChevronDown,
     Library,
+    Plus,
+    List,
+    Tag,
 } from "lucide-react";
 
 const Sidebar = ({
@@ -31,6 +36,14 @@ const Sidebar = ({
     onItemClick,
 }) => {
     const [hoveredItem, setHoveredItem] = useState(null);
+    const [expandedItems, setExpandedItems] = useState({});
+
+    const toggleSubmenu = (itemId) => {
+        setExpandedItems((prev) => ({
+            ...prev,
+            [itemId]: !prev[itemId],
+        }));
+    };
 
     const bgColor = useColorModeValue("white", "gray.800");
     const borderColor = useColorModeValue("gray.100", "gray.700");
@@ -40,8 +53,21 @@ const Sidebar = ({
 
     const menuItems = [
         { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-        { id: "books", label: "Kelola Buku", icon: BookOpen },
-        { id: "categories", label: "Kategori", icon: FolderOpen },
+        {
+            id: "books",
+            label: "Kelola Buku",
+            icon: BookOpen,
+            hasSubmenu: true,
+            submenu: [
+                { id: "books-add", label: "Tambah Buku", icon: Plus },
+                {
+                    id: "books-content",
+                    label: "Tambah Isi Buku",
+                    icon: BookOpen,
+                },
+                { id: "categories", label: "Kategori", icon: Tag },
+            ],
+        },
         { id: "users", label: "Pengguna", icon: Users },
         { id: "analytics", label: "Analitik", icon: BarChart3 },
         { id: "library", label: "Perpustakaan", icon: Library },
@@ -76,102 +102,181 @@ const Sidebar = ({
 
     const MenuItem = ({ item, isBottom = false }) => {
         const Icon = item.icon;
-        const isActive = activeItem === item.id;
+        const isActive =
+            activeItem === item.id ||
+            (item.submenu && item.submenu.some((sub) => activeItem === sub.id));
         const isHovered = hoveredItem === item.id;
+        const isExpanded = expandedItems[item.id];
+
+        const handleClick = () => {
+            if (item.hasSubmenu && !isCollapsed) {
+                toggleSubmenu(item.id);
+            } else if (item.onClick) {
+                item.onClick();
+            } else {
+                onItemClick(item.id);
+            }
+        };
 
         return (
-            <Tooltip
-                label={item.label}
-                placement="right"
-                isDisabled={!isCollapsed}
-                hasArrow
-                bg="gray.800"
-                color="white"
-                fontSize="sm"
-                px={3}
-                py={2}
-                borderRadius="md"
-            >
-                <motion.div
-                    variants={itemVariants}
-                    whileHover="hover"
-                    whileTap="tap"
-                    onHoverStart={() => setHoveredItem(item.id)}
-                    onHoverEnd={() => setHoveredItem(null)}
+            <Box>
+                <Tooltip
+                    label={item.label}
+                    placement="right"
+                    isDisabled={!isCollapsed}
+                    hasArrow
+                    bg="gray.800"
+                    color="white"
+                    fontSize="sm"
+                    px={3}
+                    py={2}
+                    borderRadius="md"
                 >
-                    <HStack
-                        as="button"
-                        w="full"
-                        p={3}
-                        borderRadius="xl"
-                        bg={
-                            isActive
-                                ? activeColor
-                                : isHovered
-                                ? hoverBg
-                                : "transparent"
-                        }
-                        color={isActive ? "white" : textColor}
-                        cursor="pointer"
-                        onClick={() =>
-                            item.onClick ? item.onClick() : onItemClick(item.id)
-                        }
-                        spacing={4}
-                        transition="all 0.2s"
-                        _hover={{
-                            transform: "translateX(2px)",
-                        }}
-                        position="relative"
-                        overflow="hidden"
+                    <motion.div
+                        variants={itemVariants}
+                        whileHover="hover"
+                        whileTap="tap"
+                        onHoverStart={() => setHoveredItem(item.id)}
+                        onHoverEnd={() => setHoveredItem(null)}
                     >
-                        <motion.div
-                            animate={{
-                                rotate: isActive ? 360 : 0,
+                        <HStack
+                            as="button"
+                            w="full"
+                            p={3}
+                            borderRadius="xl"
+                            bg={
+                                isActive
+                                    ? activeColor
+                                    : isHovered
+                                    ? hoverBg
+                                    : "transparent"
+                            }
+                            color={isActive ? "white" : textColor}
+                            cursor="pointer"
+                            onClick={handleClick}
+                            spacing={4}
+                            transition="all 0.2s"
+                            _hover={{
+                                transform: "translateX(2px)",
                             }}
-                            transition={{ duration: 0.5, ease: "easeInOut" }}
+                            position="relative"
+                            overflow="hidden"
                         >
-                            <Icon size={20} />
-                        </motion.div>
+                            <motion.div
+                                animate={{
+                                    rotate: isActive ? 360 : 0,
+                                }}
+                                transition={{
+                                    duration: 0.5,
+                                    ease: "easeInOut",
+                                }}
+                            >
+                                <Icon size={20} />
+                            </motion.div>
 
-                        <AnimatePresence>
-                            {!isCollapsed && (
+                            <AnimatePresence>
+                                {!isCollapsed && (
+                                    <motion.div
+                                        initial={{ opacity: 0, width: 0 }}
+                                        animate={{ opacity: 1, width: "auto" }}
+                                        exit={{ opacity: 0, width: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                        style={{ flex: 1 }}
+                                    >
+                                        <Text
+                                            fontSize="sm"
+                                            fontWeight={
+                                                isActive ? "600" : "500"
+                                            }
+                                            whiteSpace="nowrap"
+                                        >
+                                            {item.label}
+                                        </Text>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            {/* Dropdown arrow */}
+                            {item.hasSubmenu && !isCollapsed && (
                                 <motion.div
-                                    initial={{ opacity: 0, width: 0 }}
-                                    animate={{ opacity: 1, width: "auto" }}
-                                    exit={{ opacity: 0, width: 0 }}
+                                    animate={{ rotate: isExpanded ? 90 : 0 }}
                                     transition={{ duration: 0.2 }}
                                 >
-                                    <Text
-                                        fontSize="sm"
-                                        fontWeight={isActive ? "600" : "500"}
-                                        whiteSpace="nowrap"
-                                    >
-                                        {item.label}
-                                    </Text>
+                                    <ChevronRight size={16} />
                                 </motion.div>
                             )}
-                        </AnimatePresence>
 
-                        {/* Active indicator */}
-                        {isActive && (
-                            <motion.div
-                                layoutId="activeIndicator"
-                                style={{
-                                    position: "absolute",
-                                    right: 8,
-                                    width: 4,
-                                    height: 4,
-                                    borderRadius: "50%",
-                                    backgroundColor: "white",
-                                }}
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                transition={{ duration: 0.2 }}
-                            />
-                        )}
-                    </HStack>
-                </motion.div>
-            </Tooltip>
+                            {/* Active indicator */}
+                            {isActive && (
+                                <motion.div
+                                    layoutId="activeIndicator"
+                                    style={{
+                                        position: "absolute",
+                                        right: 8,
+                                        width: 4,
+                                        height: 4,
+                                        borderRadius: "50%",
+                                        backgroundColor: "white",
+                                    }}
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ duration: 0.2 }}
+                                />
+                            )}
+                        </HStack>
+                    </motion.div>
+                </Tooltip>
+
+                {/* Submenu */}
+                {item.hasSubmenu && !isCollapsed && (
+                    <Collapse in={isExpanded}>
+                        <VStack spacing={1} mt={2} ml={6} align="stretch">
+                            {item.submenu.map((subItem) => (
+                                <motion.div
+                                    key={subItem.id}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    <HStack
+                                        as="button"
+                                        w="full"
+                                        p={2}
+                                        pl={4}
+                                        borderRadius="lg"
+                                        bg={
+                                            activeItem === subItem.id
+                                                ? "teal.100"
+                                                : "transparent"
+                                        }
+                                        color={
+                                            activeItem === subItem.id
+                                                ? "teal.700"
+                                                : textColor
+                                        }
+                                        cursor="pointer"
+                                        onClick={() => onItemClick(subItem.id)}
+                                        spacing={3}
+                                        transition="all 0.2s"
+                                        _hover={{
+                                            bg: useColorModeValue(
+                                                "teal.50",
+                                                "teal.900"
+                                            ),
+                                            transform: "translateX(2px)",
+                                        }}
+                                    >
+                                        <subItem.icon size={16} />
+                                        <Text fontSize="sm" fontWeight="500">
+                                            {subItem.label}
+                                        </Text>
+                                    </HStack>
+                                </motion.div>
+                            ))}
+                        </VStack>
+                    </Collapse>
+                )}
+            </Box>
         );
     };
 

@@ -30,7 +30,6 @@ import {
     Tag,
     FileText,
     Calendar,
-    DollarSign,
     Image as ImageIcon,
     X,
     Edit3,
@@ -42,7 +41,6 @@ const EditBookModal = ({ isOpen, onClose, book, onBookUpdated }) => {
         author: "",
         category: "",
         description: "",
-        price: "",
         publishDate: "",
         isbn: "",
         pages: "",
@@ -82,7 +80,6 @@ const EditBookModal = ({ isOpen, onClose, book, onBookUpdated }) => {
                 author: book.author || "",
                 category: book.category || "",
                 description: book.description || "",
-                price: book.price || "",
                 publishDate: book.publishDate || "",
                 isbn: book.isbn || "",
                 pages: book.pages || "",
@@ -461,82 +458,40 @@ const EditBookModal = ({ isOpen, onClose, book, onBookUpdated }) => {
                                                 </FormControl>
                                             </HStack>
 
-                                            <HStack spacing={4} align="start">
-                                                <FormControl isRequired>
-                                                    <FormLabel
-                                                        fontSize="sm"
-                                                        fontWeight="600"
-                                                    >
-                                                        <HStack spacing={2}>
-                                                            <Tag size={16} />
-                                                            <Text>
-                                                                Kategori
-                                                            </Text>
-                                                        </HStack>
-                                                    </FormLabel>
-                                                    <Select
-                                                        name="category"
-                                                        value={
-                                                            formData.category
-                                                        }
-                                                        onChange={
-                                                            handleInputChange
-                                                        }
-                                                        placeholder="Pilih kategori"
-                                                        borderRadius="lg"
-                                                        _focus={{
-                                                            borderColor:
-                                                                "blue.500",
-                                                            boxShadow:
-                                                                "0 0 0 1px blue.500",
-                                                        }}
-                                                    >
-                                                        {categories.map(
-                                                            (category) => (
-                                                                <option
-                                                                    key={
-                                                                        category
-                                                                    }
-                                                                    value={
-                                                                        category
-                                                                    }
-                                                                >
-                                                                    {category}
-                                                                </option>
-                                                            )
-                                                        )}
-                                                    </Select>
-                                                </FormControl>
-                                                <FormControl>
-                                                    <FormLabel
-                                                        fontSize="sm"
-                                                        fontWeight="600"
-                                                    >
-                                                        <HStack spacing={2}>
-                                                            <DollarSign
-                                                                size={16}
-                                                            />
-                                                            <Text>Harga</Text>
-                                                        </HStack>
-                                                    </FormLabel>
-                                                    <Input
-                                                        name="price"
-                                                        type="number"
-                                                        value={formData.price}
-                                                        onChange={
-                                                            handleInputChange
-                                                        }
-                                                        placeholder="0"
-                                                        borderRadius="lg"
-                                                        _focus={{
-                                                            borderColor:
-                                                                "blue.500",
-                                                            boxShadow:
-                                                                "0 0 0 1px blue.500",
-                                                        }}
-                                                    />
-                                                </FormControl>
-                                            </HStack>
+                                            <FormControl isRequired>
+                                                <FormLabel
+                                                    fontSize="sm"
+                                                    fontWeight="600"
+                                                >
+                                                    <HStack spacing={2}>
+                                                        <Tag size={16} />
+                                                        <Text>Kategori</Text>
+                                                    </HStack>
+                                                </FormLabel>
+                                                <Select
+                                                    name="category"
+                                                    value={formData.category}
+                                                    onChange={handleInputChange}
+                                                    placeholder="Pilih kategori"
+                                                    borderRadius="lg"
+                                                    _focus={{
+                                                        borderColor: "blue.500",
+                                                        boxShadow:
+                                                            "0 0 0 1px blue.500",
+                                                    }}
+                                                >
+                                                    {categories.map(
+                                                        (category) => (
+                                                            <option
+                                                                key={category}
+                                                                value={category}
+                                                            >
+                                                                {category}
+                                                            </option>
+                                                        )
+                                                    )}
+                                                </Select>
+                                            </FormControl>
 
                                             <FormControl>
                                                 <FormLabel

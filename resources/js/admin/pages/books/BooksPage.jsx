@@ -54,10 +54,12 @@ const BooksPage = () => {
 
     const fetchBooks = async () => {
         try {
-            const response = await fetch("/books");
+            const response = await fetch("/admin/books");
             if (response.ok) {
                 const booksData = await response.json();
                 setBooks(booksData);
+            } else {
+                console.error("Failed to fetch books:", response.status);
             }
         } catch (error) {
             console.error("Error fetching books:", error);

@@ -15,7 +15,6 @@ class Book extends Model
         'author',
         'category',
         'description',
-        'price',
         'publish_date',
         'isbn',
         'pages',
@@ -25,6 +24,14 @@ class Book extends Model
         'cover',
         'total_pages',
     ];
+
+    /**
+     * Get the contents for the book.
+     */
+    public function contents()
+    {
+        return $this->hasMany(BookContent::class)->orderBy('order_index');
+    }
 
     public function categories()
     {

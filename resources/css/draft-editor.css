@@ -1,0 +1,87 @@
+/* React Draft WYSIWYG Custom Styles */
+.demo-wrapper {
+  border: 1px solid #F1F1F1;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.demo-editor {
+  background-color: white;
+  min-height: 400px;
+  padding: 15px;
+  font-family: 'Helvetica', 'Arial', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  border: none;
+  outline: none;
+}
+
+.demo-editor:focus {
+  outline: none;
+  border: none;
+}
+
+/* Toolbar styling */
+.rdw-editor-toolbar {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  padding: 10px;
+  border-radius: 8px 8px 0 0;
+}
+
+.rdw-option-wrapper {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin: 0 2px;
+  min-width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rdw-option-active {
+  background-color: #007bff;
+  color: white;
+}
+
+.rdw-dropdown-wrapper {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin: 0 2px;
+}
+
+.rdw-dropdown-selectedtext {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+/* Focus state for editor */
+.demo-wrapper:focus-within {
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .demo-editor {
+    background-color: #2d3748;
+    color: #e2e8f0;
+  }
+  
+  .rdw-editor-toolbar {
+    background-color: #4a5568;
+    border-color: #718096;
+  }
+  
+  .rdw-option-wrapper {
+    border-color: #718096;
+    color: #e2e8f0;
+  }
+  
+  .rdw-dropdown-wrapper {
+    border-color: #718096;
+    background-color: #4a5568;
+  }
+}
+

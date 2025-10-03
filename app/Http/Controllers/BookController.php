@@ -9,209 +9,178 @@ use Illuminate\Support\Facades\Storage;
 class BookController extends Controller
 {
     /**
-     * List buku dari database (simple pagination optional).
+     * Get all books for the home page
      */
-    public function index(Request $request)
+    public function index()
     {
-        $books = Book::query()
-            ->select([
-                'id', 'title', 'author', 'category', 'description', 
-                'publish_date', 'isbn', 'pages', 'language', 
-                'status', 'slug', 'cover', 'created_at', 'updated_at'
-            ])
-            ->orderByDesc('id')
-            ->get()
-            ->map(function ($book) {
-                return [
-                    'id' => $book->id,
-                    'title' => $book->title,
-                    'author' => $book->author,
-                    'category' => $book->category,
-                    'description' => $book->description,
-                    'publishDate' => $book->publish_date,
-                    'isbn' => $book->isbn,
-                    'pages' => $book->pages,
-                    'language' => $book->language,
-                    'status' => $book->status,
-                    'slug' => $book->slug,
-                    'cover' => $book->cover,
-                    'createdAt' => $book->created_at,
-                    'updatedAt' => $book->updated_at,
-                ];
-            });
+        $books = Book::where('status', 'published')
+            ->select('id', 'title', 'code', 'cover', 'description', 'author', 'publish_date', 'isbn', 'pages', 'language', 'status')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Transform cover URLs to full URLs
+        $books->transform(function ($book) {
+            if ($book->cover && !str_starts_with($book->cover, 'http')) {
+                $book->cover = Storage::url($book->cover);
+            }
+            return $book;
+        });
+
         return response()->json($books);
     }
 
     /**
-     * Simpan buku baru.
+     * Get all books for admin (including all statuses)
      */
-    public function store(Request $request)
+    public function adminIndex()
     {
-        $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'author' => ['required', 'string', 'max:255'],
-            'category' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:2000'],
-            'publishDate' => ['nullable', 'date'],
-            'isbn' => ['nullable', 'string', 'max:255'],
-            'pages' => ['nullable', 'integer', 'min:1'],
-            'language' => ['required', 'string', 'max:10'],
-            'status' => ['required', 'string', 'in:draft,review,published,archived'],
-            'cover' => ['nullable', 'string', 'max:500000'],
-        ]);
+        $books = Book::select('id', 'title', 'code', 'cover', 'description', 'author', 'publish_date', 'isbn', 'pages', 'language', 'status', 'category')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        // Generate slug from title
-        $slug = \Str::slug($validated['title']);
-        $originalSlug = $slug;
-        $counter = 1;
-        
-        // Ensure unique slug
-        while (Book::where('slug', $slug)->exists()) {
-            $slug = $originalSlug . '-' . $counter;
-            $counter++;
-        }
+        // Transform cover URLs to full URLs
+        $books->transform(function ($book) {
+            if ($book->cover && !str_starts_with($book->cover, 'http')) {
+                $book->cover = Storage::url($book->cover);
+            }
+            return $book;
+        });
 
-        // Handle cover image
-        $cover = $validated['cover'] ?? '/images/Image-Cover Buku.svg';
-        if (!$cover) {
-            $cover = '/images/Image-Cover Buku.svg';
-        }
-        
-        // If it's a data URL (base64), save it as file
-        if (preg_match('/^data:image\/(\w+);base64,/', $cover, $matches)) {
-            $imageType = $matches[1];
-            $imageData = substr($cover, strpos($cover, ',') + 1);
-            $imageData = base64_decode($imageData);
-            
-            $fileName = 'book-cover-' . time() . '.' . $imageType;
-            $filePath = 'books/' . $fileName;
-            
-            Storage::disk('public')->put($filePath, $imageData);
-            $cover = '/storage/' . $filePath;
-        }
-
-        $book = Book::create([
-            'title' => $validated['title'],
-            'author' => $validated['author'],
-            'category' => $validated['category'],
-            'description' => $validated['description'],
-            'publish_date' => $validated['publishDate'],
-            'isbn' => $validated['isbn'],
-            'pages' => $validated['pages'],
-            'language' => $validated['language'],
-            'status' => $validated['status'],
-            'slug' => $slug,
-            'cover' => $cover,
-            'total_pages' => $validated['pages'] ?? 1,
-        ]);
-
-        return response()->json([
-            'id' => $book->id,
-            'title' => $book->title,
-            'author' => $book->author,
-            'category' => $book->category,
-            'description' => $book->description,
-            'publishDate' => $book->publish_date,
-            'isbn' => $book->isbn,
-            'pages' => $book->pages,
-            'language' => $book->language,
-            'status' => $book->status,
-            'slug' => $book->slug,
-            'cover' => $book->cover,
-        ], 201);
+        return response()->json($books);
     }
 
     /**
-     * Upload cover image (multipart/form-data) -> returns public path
+     * Get a specific book by ID
+     */
+    public function show($id)
+    {
+        $book = Book::where('id', $id)
+            ->where('status', 'published')
+            ->select('id', 'title', 'code', 'cover', 'description', 'author', 'publish_date', 'isbn', 'pages', 'language', 'total_pages', 'status')
+            ->first();
+
+        if (!$book) {
+            return response()->json(['error' => 'Book not found'], 404);
+        }
+
+        // Transform cover URL to full URL
+        if ($book->cover && !str_starts_with($book->cover, 'http')) {
+            $book->cover = Storage::url($book->cover);
+        }
+
+        return response()->json($book);
+    }
+
+    /**
+     * Store a newly created book
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'code' => 'required|string|max:100',
+            'slug' => 'required|string|max:255',
+            'author' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'publish_date' => 'nullable|date',
+            'isbn' => 'nullable|string|max:20',
+            'pages' => 'nullable|integer|min:1',
+            'language' => 'nullable|string|max:50',
+            'status' => 'nullable|in:draft,review,published,archived',
+            'cover' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        $bookData = $request->only([
+            'title', 'code', 'slug', 'author', 'description', 
+            'publish_date', 'isbn', 'pages', 'language', 'status'
+        ]);
+        
+        // Set default status if not provided
+        if (!isset($bookData['status'])) {
+            $bookData['status'] = 'published';
+        }
+
+        if ($request->hasFile('cover')) {
+            $coverPath = $request->file('cover')->store('book-covers', 'public');
+            $bookData['cover'] = $coverPath;
+        }
+
+        $book = Book::create($bookData);
+
+        return response()->json($book, 201);
+    }
+
+    /**
+     * Update the specified book
+     */
+    public function update(Request $request, $id)
+    {
+        $book = Book::findOrFail($id);
+
+        $request->validate([
+            'title' => 'sometimes|string|max:255',
+            'code' => 'sometimes|string|max:100',
+            'author' => 'sometimes|string|max:255',
+            'description' => 'nullable|string',
+            'publish_date' => 'nullable|date',
+            'isbn' => 'nullable|string|max:20',
+            'pages' => 'nullable|integer|min:1',
+            'language' => 'nullable|string|max:50',
+            'cover' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        $bookData = $request->only([
+            'title', 'code', 'author', 'description', 
+            'publish_date', 'isbn', 'pages', 'language'
+        ]);
+
+        if ($request->hasFile('cover')) {
+            // Delete old cover if exists
+            if ($book->cover) {
+                Storage::disk('public')->delete($book->cover);
+            }
+            
+            $coverPath = $request->file('cover')->store('book-covers', 'public');
+            $bookData['cover'] = $coverPath;
+        }
+
+        $book->update($bookData);
+
+        return response()->json($book);
+    }
+
+    /**
+     * Remove the specified book
+     */
+    public function destroy($id)
+    {
+        $book = Book::findOrFail($id);
+        
+        // Delete cover file if exists
+        if ($book->cover) {
+            Storage::disk('public')->delete($book->cover);
+        }
+        
+        $book->delete();
+
+        return response()->json(['message' => 'Book deleted successfully']);
+    }
+
+    /**
+     * Upload book cover
      */
     public function uploadCover(Request $request)
     {
         $request->validate([
-            'file' => ['required', 'file', 'image', 'max:5120'], // max 5MB
+            'cover' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        // Simpan ke disk 'public' agar tersymlink ke public/storage
-        $path = $request->file('file')->store('books', 'public');
-        // Bangun URL absolut agar bisa langsung dipakai pada input URL
-        $publicPath = '/storage/' . ltrim($path, '/');
-        $publicUrl = url($publicPath);
+        $coverPath = $request->file('cover')->store('book-covers', 'public');
+        $coverUrl = Storage::url($coverPath);
 
         return response()->json([
-            'path' => $publicUrl,
-            'relative' => $publicPath,
-        ], 201);
-    }
-
-    /**
-     * Detail buku berdasarkan slug atau id numerik.
-     */
-    public function show(string $id)
-    {
-        $book = Book::query()
-            ->where('slug', $id)
-            ->orWhere('id', is_numeric($id) ? (int) $id : 0)
-            ->first();
-
-        if (!$book) {
-            return response()->json(['message' => 'Not Found'], 404);
-        }
-
-        return response()->json([
-            'id' => (string) $book->id,
-            'title' => $book->title,
-            'code' => $book->code,
-            'cover' => $book->cover,
-            'totalPages' => (int) $book->total_pages,
-            'slug' => $book->slug,
+            'cover_path' => $coverPath,
+            'cover_url' => $coverUrl
         ]);
     }
-
-    /**
-     * Update buku.
-     */
-    public function update(Request $request, int $id)
-    {
-        $book = Book::findOrFail($id);
-        $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'slug' => ['required', 'string', 'max:255', 'unique:books,slug,' . $book->id],
-            'code' => ['nullable', 'string', 'max:255'],
-            'cover' => ['nullable', 'string', 'max:1000'],
-            'total_pages' => ['nullable', 'integer', 'min:1'],
-        ]);
-
-        $book->title = $validated['title'];
-        $book->slug = $validated['slug'];
-        $book->code = $validated['code'] ?? null;
-        $book->cover = $validated['cover'] ?? $book->cover;
-        $book->total_pages = $validated['total_pages'] ?? $book->total_pages;
-        $book->save();
-
-        return response()->json([
-            'id' => $book->id,
-            'slug' => $book->slug,
-            'title' => $book->title,
-            'code' => $book->code,
-            'cover' => $book->cover,
-            'total_pages' => (int) $book->total_pages,
-        ]);
-    }
-
-    /**
-     * Hapus buku.
-     */
-    public function destroy(int $id)
-    {
-        $book = Book::findOrFail($id);
-        $book->delete();
-        return response()->json(['message' => 'Deleted']);
-    }
-
-    // Hapus sumber data demo; kini menggunakan database
 }
-
-
-
-
-
-

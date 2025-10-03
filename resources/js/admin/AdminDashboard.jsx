@@ -15,6 +15,7 @@ import DashboardOverview from "./components/DashboardOverview";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { BooksPage } from "./pages/books";
 import { CategoriesPage } from "./pages/categories";
+import BookContentPage from "./pages/books/BookContentPage";
 
 const AdminDashboard = ({ onLogout }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
@@ -83,6 +84,10 @@ const AdminDashboard = ({ onLogout }) => {
                 return <DashboardOverview />;
             case "books":
                 return <BooksPage />;
+            case "books-add":
+                return <BooksPage showAddModal={true} />;
+            case "books-content":
+                return <BookContentPage />;
             case "categories":
                 return <CategoriesPage />;
             case "users":

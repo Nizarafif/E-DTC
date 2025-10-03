@@ -148,6 +148,7 @@ const BooksList = ({ books, onEdit, onDelete, onView }) => {
                     lg: "repeat(3, 1fr)",
                 }}
                 gap={6}
+                justifyItems="start"
             >
                 {books.map((book, index) => (
                     <motion.div
@@ -157,6 +158,9 @@ const BooksList = ({ books, onEdit, onDelete, onView }) => {
                         transition={{ duration: 0.2 }}
                     >
                         <Box
+                            w={{ base: "300px", md: "300px" }}
+                            maxW="100%"
+                            justifySelf="start"
                             bg={bgColor}
                             borderRadius="2xl"
                             border="1px"
@@ -334,7 +338,7 @@ const BooksList = ({ books, onEdit, onDelete, onView }) => {
                                         <HStack spacing={1}>
                                             <Calendar size={12} />
                                             <Text>
-                                                {formatDate(book.publishDate)}
+                                                {formatDate(book.publish_date)}
                                             </Text>
                                         </HStack>
                                     </HStack>

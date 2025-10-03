@@ -162,28 +162,39 @@ const AddBookModal = ({ isOpen, onClose, onBookAdded }) => {
                 return;
             }
 
-            // Prepare data for API
-            const bookData = {
-                title: formData.title,
-                author: formData.author,
-                category: formData.category,
-                description: formData.description,
-                publishDate: formData.publishDate,
-                isbn: formData.isbn,
-                pages: formData.pages ? parseInt(formData.pages) : null,
-                language: formData.language,
-                status: formData.status,
-                cover: coverPreview,
-            };
+            // Prepare FormData for file upload
+            const formDataToSend = new FormData();
+            formDataToSend.append("title", formData.title);
+            formDataToSend.append("author", formData.author);
+            formDataToSend.append("category", formData.category);
+            formDataToSend.append("description", formData.description || "");
+            formDataToSend.append("publish_date", formData.publishDate || "");
+            formDataToSend.append("isbn", formData.isbn || "");
+            formDataToSend.append("pages", formData.pages || "");
+            formDataToSend.append("language", formData.language);
+            formDataToSend.append(
+                "code",
+                formData.title.replace(/\s+/g, "-").toLowerCase()
+            ); // Generate code from title
+            // Generate unique slug
+            const baseSlug = formData.title.replace(/\s+/g, "-").toLowerCase();
+            const timestamp = Date.now();
+            const uniqueSlug = `${baseSlug}-${timestamp}`;
+            formDataToSend.append("slug", uniqueSlug); // Generate unique slug from title
+            formDataToSend.append("status", formData.status);
+
+            // Add cover image if exists
+            if (coverImage) {
+                formDataToSend.append("cover", coverImage);
+            }
 
             // Send to API
             const response = await fetch("/books", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
                     Accept: "application/json",
                 },
-                body: JSON.stringify(bookData),
+                body: formDataToSend,
             });
 
             if (!response.ok) {
@@ -253,7 +264,7 @@ const AddBookModal = ({ isOpen, onClose, onBookAdded }) => {
                 <Modal
                     isOpen={isOpen}
                     onClose={onClose}
-                    size="xl"
+                    size="lg"
                     closeOnOverlayClick={false}
                     isCentered
                     scrollBehavior="inside"
@@ -273,6 +284,7 @@ const AddBookModal = ({ isOpen, onClose, onBookAdded }) => {
                         border="1px"
                         borderColor={borderColor}
                         shadow="2xl"
+                        maxW="700px"
                     >
                         <ModalHeader pb={2}>
                             <HStack spacing={3}>
