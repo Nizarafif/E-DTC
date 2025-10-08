@@ -1,516 +1,493 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
     Box,
-    Grid,
     VStack,
     HStack,
     Text,
-    Table,
-    Thead,
-    Tbody,
-    Tr,
-    Th,
-    Td,
-    Avatar,
-    Badge,
+    Button,
     useColorModeValue,
+    useToast,
+    SimpleGrid,
+    Stat,
+    StatLabel,
+    StatNumber,
+    StatHelpText,
+    StatArrow,
+    Card,
+    CardBody,
+    CardHeader,
+    IconButton,
+    Badge,
     Progress,
     Divider,
+    Flex,
+    Spacer,
+    Avatar,
+    AvatarGroup,
+    Tooltip,
+    Link,
+    Image,
 } from "@chakra-ui/react";
-import { TrendingUp, Calendar, Clock, Users } from "lucide-react";
-import DashboardStats from "./DashboardStats";
+import {
+    BookOpen,
+    FileText,
+    Users,
+    TrendingUp,
+    TrendingDown,
+    RefreshCw,
+    Plus,
+    Eye,
+    Edit3,
+    Trash2,
+    Calendar,
+    Clock,
+    Activity,
+    BarChart3,
+    PieChart,
+    Download,
+    Star,
+    Heart,
+} from "lucide-react";
+import RealtimeStats from "./RealtimeStats";
+import RecentActivity from "./RecentActivity";
 
-const DashboardOverview = () => {
+const DashboardOverview = ({ onNavigate }) => {
+    const [dashboardData, setDashboardData] = useState({
+        books: [],
+        bookContents: [],
+        users: [],
+        stats: {
+            totalBooks: 0,
+            totalContents: 0,
+            totalUsers: 0,
+            editorContents: 0,
+            pdfContents: 0,
+            recentBooks: [],
+            recentContents: [],
+            popularBooks: [],
+        },
+    });
+    const [isLoading, setIsLoading] = useState(true);
+    const [lastUpdated, setLastUpdated] = useState(new Date());
+    const [autoRefresh, setAutoRefresh] = useState(true);
+
     const bgColor = useColorModeValue("white", "gray.800");
-    const borderColor = useColorModeValue("gray.100", "gray.700");
+    const borderColor = useColorModeValue("gray.200", "gray.600");
     const textColor = useColorModeValue("gray.700", "gray.200");
+    const cardBg = useColorModeValue("gray.50", "gray.700");
+    const toast = useToast();
 
-    // Mock data
-    const recentBooks = [
-        {
-            id: 1,
-            title: "Panduan React Advanced",
-            author: "John Doe",
-            status: "published",
-            downloads: 1234,
-            rating: 4.8,
-        },
-        {
-            id: 2,
-            title: "Machine Learning Basics",
-            author: "Jane Smith",
-            status: "draft",
-            downloads: 856,
-            rating: 4.6,
-        },
-        {
-            id: 3,
-            title: "Web Development 2024",
-            author: "Bob Johnson",
-            status: "published",
-            downloads: 2341,
-            rating: 4.9,
-        },
-        {
-            id: 4,
-            title: "Data Science Guide",
-            author: "Alice Brown",
-            status: "review",
-            downloads: 567,
-            rating: 4.5,
-        },
-    ];
+    // Auto refresh setiap 30 detik
+    useEffect(() => {
+        if (autoRefresh) {
+            const interval = setInterval(() => {
+                fetchDashboardData();
+            }, 30000); // 30 detik
 
-    const topCategories = [
-        { name: "Teknologi", books: 45, percentage: 85 },
-        { name: "Bisnis", books: 32, percentage: 70 },
-        { name: "Pendidikan", books: 28, percentage: 60 },
-        { name: "Kesehatan", books: 15, percentage: 35 },
-    ];
+            return () => clearInterval(interval);
+        }
+    }, [autoRefresh]);
 
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: {
-                staggerChildren: 0.1,
-                delayChildren: 0.3,
-            },
-        },
-    };
+    // Load data awal
+    useEffect(() => {
+        fetchDashboardData();
+    }, []);
 
-    const itemVariants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: {
-            opacity: 1,
-            y: 0,
-            transition: {
-                duration: 0.4,
-                ease: "easeOut",
-            },
-        },
-    };
-
-    const getStatusColor = (status) => {
-        switch (status) {
-            case "published":
-                return "green";
-            case "draft":
-                return "yellow";
-            case "review":
-                return "blue";
-            default:
-                return "gray";
+    // Helper function to safely parse JSON
+    const safeJsonParse = async (response) => {
+        if (!response.ok) return [];
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            console.warn("Response is not JSON:", contentType);
+            return [];
+        }
+        try {
+            return await response.json();
+        } catch (error) {
+            console.warn("JSON parse error:", error);
+            return [];
         }
     };
 
-    const getStatusText = (status) => {
-        switch (status) {
-            case "published":
-                return "Terbit";
-            case "draft":
-                return "Draft";
-            case "review":
-                return "Review";
-            default:
-                return "Unknown";
+    const fetchDashboardData = async () => {
+        try {
+            setIsLoading(true);
+
+            // Fetch semua data secara parallel dengan error handling
+            const [booksResponse, contentsResponse, usersResponse] =
+                await Promise.allSettled([
+                    fetch("/api/books").catch(() => ({ ok: false })),
+                    fetch("/api/book-contents").catch(() => ({ ok: false })),
+                    fetch("/api/users").catch(() => ({ ok: false })),
+                ]);
+
+            const books =
+                booksResponse.status === "fulfilled"
+                    ? await safeJsonParse(booksResponse.value)
+                    : [];
+            const bookContents =
+                contentsResponse.status === "fulfilled"
+                    ? await safeJsonParse(contentsResponse.value)
+                    : [];
+            const users =
+                usersResponse.status === "fulfilled"
+                    ? await safeJsonParse(usersResponse.value)
+                    : [];
+
+            // Calculate statistics
+            const stats = {
+                totalBooks: books.length,
+                totalContents: bookContents.length,
+                totalUsers: users.length,
+                editorContents: bookContents.filter(
+                    (content) => content.content_type === "editor"
+                ).length,
+                pdfContents: bookContents.filter(
+                    (content) => content.content_type === "pdf"
+                ).length,
+                recentBooks: books
+                    .sort(
+                        (a, b) =>
+                            new Date(b.created_at) - new Date(a.created_at)
+                    )
+                    .slice(0, 5),
+                recentContents: bookContents
+                    .sort(
+                        (a, b) =>
+                            new Date(b.created_at) - new Date(a.created_at)
+                    )
+                    .slice(0, 5),
+                popularBooks: books
+                    .sort((a, b) => (b.views || 0) - (a.views || 0))
+                    .slice(0, 5),
+            };
+
+            setDashboardData({
+                books,
+                bookContents,
+                users,
+                stats,
+            });
+
+            setLastUpdated(new Date());
+
+            // Show success message only if we got some data
+            if (books.length > 0 || bookContents.length > 0) {
+                toast({
+                    title: "Data Diperbarui",
+                    description: "Dashboard berhasil di-refresh",
+                    status: "success",
+                    duration: 2000,
+                    isClosable: true,
+                    position: "top-right",
+                });
+            }
+        } catch (error) {
+            console.error("Dashboard fetch error:", error);
+
+            // Set fallback data instead of showing error
+            setDashboardData({
+                books: [],
+                bookContents: [],
+                users: [],
+                stats: {
+                    totalBooks: 0,
+                    totalContents: 0,
+                    totalUsers: 0,
+                    editorContents: 0,
+                    pdfContents: 0,
+                    recentBooks: [],
+                    recentContents: [],
+                    popularBooks: [],
+                },
+            });
+
+            toast({
+                title: "Backend API Tidak Tersedia",
+                description:
+                    "Dashboard menggunakan data offline. Pastikan Laravel backend berjalan dan API routes tersedia di /api/books, /api/book-contents, /api/users",
+                status: "warning",
+                duration: 6000,
+                isClosable: true,
+                position: "top-right",
+            });
+        } finally {
+            setIsLoading(false);
         }
+    };
+
+    const handleManualRefresh = () => {
+        fetchDashboardData();
+    };
+
+    const toggleAutoRefresh = () => {
+        setAutoRefresh(!autoRefresh);
+        toast({
+            title: autoRefresh
+                ? "Auto Refresh Dimatikan"
+                : "Auto Refresh Diaktifkan",
+            description: autoRefresh
+                ? "Dashboard tidak akan update otomatis"
+                : "Dashboard akan update setiap 30 detik",
+            status: "info",
+            duration: 2000,
+            isClosable: true,
+            position: "top-right",
+        });
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return "-";
+        return new Date(dateString).toLocaleDateString("id-ID", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    };
+
+    const formatTimeAgo = (dateString) => {
+        if (!dateString) return "-";
+        const now = new Date();
+        const date = new Date(dateString);
+        const diffInSeconds = Math.floor((now - date) / 1000);
+
+        if (diffInSeconds < 60) return `${diffInSeconds} detik yang lalu`;
+        if (diffInSeconds < 3600)
+            return `${Math.floor(diffInSeconds / 60)} menit yang lalu`;
+        if (diffInSeconds < 86400)
+            return `${Math.floor(diffInSeconds / 3600)} jam yang lalu`;
+        return `${Math.floor(diffInSeconds / 86400)} hari yang lalu`;
+    };
+
+    const getBookTitle = (bookId) => {
+        const book = dashboardData.books.find((b) => b.id === bookId);
+        return book ? book.title : "Buku Tidak Ditemukan";
+    };
+
+    const getContentTypeIcon = (contentType) => {
+        return contentType === "pdf" ? (
+            <Download size={14} />
+        ) : (
+            <FileText size={14} />
+        );
+    };
+
+    const getContentTypeColor = (contentType) => {
+        return contentType === "pdf" ? "red" : "blue";
     };
 
     return (
         <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
         >
-            <VStack spacing={8} align="stretch">
-                {/* Stats Cards */}
-                <DashboardStats />
+            <VStack spacing={6} align="stretch">
+                {/* Header Section */}
+                <Box
+                    bg={bgColor}
+                    p={6}
+                    borderRadius="2xl"
+                    border="1px"
+                    borderColor={borderColor}
+                    shadow="sm"
+                >
+                    <Flex align="center" justify="space-between">
+                        <HStack spacing={4}>
+                            <Box
+                                p={3}
+                                bg="blue.100"
+                                borderRadius="xl"
+                                color="blue.600"
+                            >
+                                <BarChart3 size={24} />
+                            </Box>
+                            <VStack align="start" spacing={1}>
+                                <Text
+                                    fontSize="2xl"
+                                    fontWeight="bold"
+                                    color={textColor}
+                                >
+                                    Dashboard Overview
+                                </Text>
+                                <Text fontSize="sm" color="gray.500">
+                                    Statistik real-time sistem E-DTC
+                                </Text>
+                            </VStack>
+                        </HStack>
 
-                {/* Main Content Grid */}
-                <Grid templateColumns={{ base: "1fr", lg: "2fr 1fr" }} gap={8}>
-                    {/* Recent Books Table */}
-                    <motion.div variants={itemVariants}>
+                        <HStack spacing={3}>
+                            <Button
+                                size="sm"
+                                variant={autoRefresh ? "solid" : "outline"}
+                                colorScheme={autoRefresh ? "green" : "gray"}
+                                leftIcon={<Activity size={16} />}
+                                onClick={toggleAutoRefresh}
+                            >
+                                {autoRefresh ? "Auto ON" : "Auto OFF"}
+                            </Button>
+                            <Button
+                                leftIcon={<RefreshCw size={16} />}
+                                variant="outline"
+                                onClick={handleManualRefresh}
+                                isLoading={isLoading}
+                            >
+                                Refresh
+                            </Button>
+                        </HStack>
+                    </Flex>
+
+                    <HStack spacing={4} mt={4} fontSize="sm" color="gray.500">
+                        <HStack spacing={1}>
+                            <Clock size={14} />
+                            <Text>
+                                Terakhir update: {formatTimeAgo(lastUpdated)}
+                            </Text>
+                        </HStack>
+                        <HStack spacing={1}>
+                            <Activity size={14} />
+                            <Text>
+                                Status: {autoRefresh ? "Live" : "Manual"}
+                            </Text>
+                        </HStack>
+                    </HStack>
+                </Box>
+
+                {/* Realtime Stats */}
+                <RealtimeStats
+                    data={dashboardData}
+                    isLoading={isLoading}
+                    onRefresh={fetchDashboardData}
+                />
+
+                {/* Recent Activity */}
+                <RecentActivity data={dashboardData} onNavigate={onNavigate} />
+
+                {/* No Data Message */}
+                {!isLoading &&
+                    dashboardData.stats.totalBooks === 0 &&
+                    dashboardData.stats.totalContents === 0 && (
                         <Box
                             bg={bgColor}
+                            p={8}
                             borderRadius="2xl"
                             border="1px"
                             borderColor={borderColor}
-                            overflow="hidden"
                             shadow="sm"
+                            textAlign="center"
                         >
-                            <VStack align="stretch" spacing={0}>
-                                <HStack justify="space-between" p={6} pb={4}>
-                                    <HStack spacing={3}>
-                                        <Box
-                                            p={2}
-                                            bg="teal.100"
-                                            borderRadius="lg"
-                                            color="teal.600"
-                                        >
-                                            <TrendingUp size={20} />
-                                        </Box>
-                                        <VStack align="start" spacing={0}>
-                                            <Text
-                                                fontSize="lg"
-                                                fontWeight="bold"
-                                                color={textColor}
-                                            >
-                                                Buku Terbaru
-                                            </Text>
-                                            <Text
-                                                fontSize="sm"
-                                                color="gray.500"
-                                            >
-                                                Aktivitas terkini
-                                            </Text>
-                                        </VStack>
-                                    </HStack>
-                                </HStack>
-
-                                <Divider borderColor={borderColor} />
-
-                                <Box overflowX="auto">
-                                    <Table variant="simple">
-                                        <Thead>
-                                            <Tr>
-                                                <Th
-                                                    border="none"
-                                                    color="gray.500"
-                                                    fontSize="xs"
-                                                    fontWeight="600"
-                                                >
-                                                    BUKU
-                                                </Th>
-                                                <Th
-                                                    border="none"
-                                                    color="gray.500"
-                                                    fontSize="xs"
-                                                    fontWeight="600"
-                                                >
-                                                    STATUS
-                                                </Th>
-                                                <Th
-                                                    border="none"
-                                                    color="gray.500"
-                                                    fontSize="xs"
-                                                    fontWeight="600"
-                                                    isNumeric
-                                                >
-                                                    UNDUHAN
-                                                </Th>
-                                                <Th
-                                                    border="none"
-                                                    color="gray.500"
-                                                    fontSize="xs"
-                                                    fontWeight="600"
-                                                    isNumeric
-                                                >
-                                                    RATING
-                                                </Th>
-                                            </Tr>
-                                        </Thead>
-                                        <Tbody>
-                                            {recentBooks.map((book, index) => (
-                                                <motion.tr
-                                                    key={book.id}
-                                                    initial={{
-                                                        opacity: 0,
-                                                        x: -20,
-                                                    }}
-                                                    animate={{
-                                                        opacity: 1,
-                                                        x: 0,
-                                                    }}
-                                                    transition={{
-                                                        delay: index * 0.1,
-                                                        duration: 0.3,
-                                                    }}
-                                                    whileHover={{
-                                                        backgroundColor:
-                                                            useColorModeValue(
-                                                                "#F9FAFB",
-                                                                "#374151"
-                                                            ),
-                                                    }}
-                                                >
-                                                    <Td border="none" py={4}>
-                                                        <HStack spacing={3}>
-                                                            <Avatar
-                                                                size="sm"
-                                                                name={
-                                                                    book.title
-                                                                }
-                                                                bg="teal.500"
-                                                                color="white"
-                                                            />
-                                                            <VStack
-                                                                align="start"
-                                                                spacing={0}
-                                                            >
-                                                                <Text
-                                                                    fontSize="sm"
-                                                                    fontWeight="600"
-                                                                    color={
-                                                                        textColor
-                                                                    }
-                                                                >
-                                                                    {book.title}
-                                                                </Text>
-                                                                <Text
-                                                                    fontSize="xs"
-                                                                    color="gray.500"
-                                                                >
-                                                                    {
-                                                                        book.author
-                                                                    }
-                                                                </Text>
-                                                            </VStack>
-                                                        </HStack>
-                                                    </Td>
-                                                    <Td border="none">
-                                                        <Badge
-                                                            colorScheme={getStatusColor(
-                                                                book.status
-                                                            )}
-                                                            borderRadius="full"
-                                                            px={3}
-                                                            py={1}
-                                                            fontSize="xs"
-                                                        >
-                                                            {getStatusText(
-                                                                book.status
-                                                            )}
-                                                        </Badge>
-                                                    </Td>
-                                                    <Td border="none" isNumeric>
-                                                        <Text
-                                                            fontSize="sm"
-                                                            fontWeight="600"
-                                                            color={textColor}
-                                                        >
-                                                            {book.downloads.toLocaleString()}
-                                                        </Text>
-                                                    </Td>
-                                                    <Td border="none" isNumeric>
-                                                        <HStack
-                                                            justify="end"
-                                                            spacing={1}
-                                                        >
-                                                            <Text
-                                                                fontSize="sm"
-                                                                fontWeight="600"
-                                                                color="yellow.500"
-                                                            >
-                                                                ★
-                                                            </Text>
-                                                            <Text
-                                                                fontSize="sm"
-                                                                fontWeight="600"
-                                                                color={
-                                                                    textColor
-                                                                }
-                                                            >
-                                                                {book.rating}
-                                                            </Text>
-                                                        </HStack>
-                                                    </Td>
-                                                </motion.tr>
-                                            ))}
-                                        </Tbody>
-                                    </Table>
+                            <VStack spacing={4}>
+                                <Box
+                                    p={4}
+                                    bg="blue.100"
+                                    borderRadius="full"
+                                    color="blue.600"
+                                >
+                                    <BookOpen size={32} />
                                 </Box>
+                                <VStack spacing={2}>
+                                    <Text
+                                        fontSize="xl"
+                                        fontWeight="bold"
+                                        color={textColor}
+                                    >
+                                        Belum Ada Data
+                                    </Text>
+                                    <Text color="gray.500" maxW="500px">
+                                        Dashboard akan menampilkan data setelah
+                                        Anda menambahkan buku dan konten
+                                        pertama. Pastikan Laravel backend
+                                        berjalan dan API routes tersedia di
+                                        /api/books, /api/book-contents,
+                                        /api/users
+                                    </Text>
+                                </VStack>
+                                <HStack spacing={3}>
+                                    <Button
+                                        colorScheme="blue"
+                                        onClick={() =>
+                                            onNavigate &&
+                                            onNavigate("books-add")
+                                        }
+                                    >
+                                        Tambah Buku Pertama
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        onClick={fetchDashboardData}
+                                    >
+                                        Refresh Data
+                                    </Button>
+                                </HStack>
                             </VStack>
                         </Box>
-                    </motion.div>
+                    )}
 
-                    {/* Right Sidebar */}
-                    <VStack spacing={6} align="stretch">
-                        {/* Top Categories */}
-                        <motion.div variants={itemVariants}>
+                {/* Quick Actions */}
+                <Card bg={bgColor} border="1px" borderColor={borderColor}>
+                    <CardHeader>
+                        <HStack spacing={3}>
                             <Box
-                                bg={bgColor}
-                                p={6}
-                                borderRadius="2xl"
-                                border="1px"
-                                borderColor={borderColor}
-                                shadow="sm"
+                                p={2}
+                                bg="green.100"
+                                borderRadius="lg"
+                                color="green.600"
                             >
-                                <HStack spacing={3} mb={6}>
-                                    <Box
-                                        p={2}
-                                        bg="blue.100"
-                                        borderRadius="lg"
-                                        color="blue.600"
-                                    >
-                                        <Users size={20} />
-                                    </Box>
-                                    <VStack align="start" spacing={0}>
-                                        <Text
-                                            fontSize="lg"
-                                            fontWeight="bold"
-                                            color={textColor}
-                                        >
-                                            Kategori Populer
-                                        </Text>
-                                        <Text fontSize="sm" color="gray.500">
-                                            Berdasarkan jumlah buku
-                                        </Text>
-                                    </VStack>
-                                </HStack>
-
-                                <VStack spacing={4} align="stretch">
-                                    {topCategories.map((category, index) => (
-                                        <motion.div
-                                            key={category.name}
-                                            initial={{ opacity: 0, x: 20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{
-                                                delay: index * 0.1,
-                                                duration: 0.3,
-                                            }}
-                                        >
-                                            <VStack align="stretch" spacing={2}>
-                                                <HStack justify="space-between">
-                                                    <Text
-                                                        fontSize="sm"
-                                                        fontWeight="600"
-                                                        color={textColor}
-                                                    >
-                                                        {category.name}
-                                                    </Text>
-                                                    <Text
-                                                        fontSize="sm"
-                                                        color="gray.500"
-                                                    >
-                                                        {category.books} buku
-                                                    </Text>
-                                                </HStack>
-                                                <motion.div
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: "100%" }}
-                                                    transition={{
-                                                        delay:
-                                                            0.5 + index * 0.1,
-                                                        duration: 0.8,
-                                                    }}
-                                                >
-                                                    <Progress
-                                                        value={
-                                                            category.percentage
-                                                        }
-                                                        size="sm"
-                                                        colorScheme="teal"
-                                                        borderRadius="full"
-                                                        bg="gray.100"
-                                                    />
-                                                </motion.div>
-                                            </VStack>
-                                        </motion.div>
-                                    ))}
-                                </VStack>
+                                <Plus size={16} />
                             </Box>
-                        </motion.div>
-
-                        {/* Quick Stats */}
-                        <motion.div variants={itemVariants}>
-                            <Box
-                                bg={bgColor}
-                                p={6}
-                                borderRadius="2xl"
-                                border="1px"
-                                borderColor={borderColor}
-                                shadow="sm"
+                            <Text
+                                fontSize="lg"
+                                fontWeight="bold"
+                                color={textColor}
                             >
-                                <HStack spacing={3} mb={6}>
-                                    <Box
-                                        p={2}
-                                        bg="green.100"
-                                        borderRadius="lg"
-                                        color="green.600"
-                                    >
-                                        <Calendar size={20} />
-                                    </Box>
-                                    <VStack align="start" spacing={0}>
-                                        <Text
-                                            fontSize="lg"
-                                            fontWeight="bold"
-                                            color={textColor}
-                                        >
-                                            Aktivitas Hari Ini
-                                        </Text>
-                                        <Text fontSize="sm" color="gray.500">
-                                            Ringkasan aktivitas
-                                        </Text>
-                                    </VStack>
-                                </HStack>
-
-                                <VStack spacing={4} align="stretch">
-                                    <HStack justify="space-between">
-                                        <HStack spacing={2}>
-                                            <Clock size={16} color="gray.500" />
-                                            <Text
-                                                fontSize="sm"
-                                                color="gray.600"
-                                            >
-                                                Buku baru diterbitkan
-                                            </Text>
-                                        </HStack>
-                                        <Text
-                                            fontSize="sm"
-                                            fontWeight="600"
-                                            color="teal.600"
-                                        >
-                                            12
-                                        </Text>
-                                    </HStack>
-
-                                    <HStack justify="space-between">
-                                        <HStack spacing={2}>
-                                            <Users size={16} color="gray.500" />
-                                            <Text
-                                                fontSize="sm"
-                                                color="gray.600"
-                                            >
-                                                Pengguna baru
-                                            </Text>
-                                        </HStack>
-                                        <Text
-                                            fontSize="sm"
-                                            fontWeight="600"
-                                            color="blue.600"
-                                        >
-                                            28
-                                        </Text>
-                                    </HStack>
-
-                                    <HStack justify="space-between">
-                                        <HStack spacing={2}>
-                                            <TrendingUp
-                                                size={16}
-                                                color="gray.500"
-                                            />
-                                            <Text
-                                                fontSize="sm"
-                                                color="gray.600"
-                                            >
-                                                Total unduhan
-                                            </Text>
-                                        </HStack>
-                                        <Text
-                                            fontSize="sm"
-                                            fontWeight="600"
-                                            color="green.600"
-                                        >
-                                            1,456
-                                        </Text>
-                                    </HStack>
-                                </VStack>
-                            </Box>
-                        </motion.div>
-                    </VStack>
-                </Grid>
+                                Quick Actions
+                            </Text>
+                        </HStack>
+                    </CardHeader>
+                    <CardBody pt={0}>
+                        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+                            <Button
+                                leftIcon={<Plus size={16} />}
+                                colorScheme="blue"
+                                variant="outline"
+                                onClick={() =>
+                                    onNavigate && onNavigate("books-add")
+                                }
+                                _hover={{ transform: "translateY(-2px)" }}
+                                transition="all 0.2s"
+                            >
+                                Tambah Buku Baru
+                            </Button>
+                            <Button
+                                leftIcon={<FileText size={16} />}
+                                colorScheme="purple"
+                                variant="outline"
+                                onClick={() =>
+                                    onNavigate && onNavigate("books-content")
+                                }
+                                _hover={{ transform: "translateY(-2px)" }}
+                                transition="all 0.2s"
+                            >
+                                Tambah Konten
+                            </Button>
+                            <Button
+                                leftIcon={<Edit3 size={16} />}
+                                colorScheme="orange"
+                                variant="outline"
+                                onClick={() =>
+                                    onNavigate && onNavigate("books-contents")
+                                }
+                                _hover={{ transform: "translateY(-2px)" }}
+                                transition="all 0.2s"
+                            >
+                                Kelola Konten
+                            </Button>
+                        </SimpleGrid>
+                    </CardBody>
+                </Card>
             </VStack>
         </motion.div>
     );

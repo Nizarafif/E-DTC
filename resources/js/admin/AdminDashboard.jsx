@@ -22,6 +22,11 @@ const AdminDashboard = ({ onLogout }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [activeItem, setActiveItem] = useState("dashboard");
 
+    // Handler untuk navigasi dari dashboard
+    const handleDashboardNavigation = (itemId) => {
+        setActiveItem(itemId);
+    };
+
     const sidebarWidth = isCollapsed ? 80 : 240;
     const bgColor = useColorModeValue("gray.50", "gray.900");
     const cardBgColor = useColorModeValue("white", "gray.800");
@@ -100,7 +105,9 @@ const AdminDashboard = ({ onLogout }) => {
     const renderContent = () => {
         switch (activeItem) {
             case "dashboard":
-                return <DashboardOverview />;
+                return (
+                    <DashboardOverview onNavigate={handleDashboardNavigation} />
+                );
             case "books":
                 return <BooksPage />;
             case "books-add":
