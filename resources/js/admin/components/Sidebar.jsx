@@ -65,7 +65,12 @@ const Sidebar = ({
                     label: "Tambah Isi Buku",
                     icon: BookOpen,
                 },
-                { id: "categories", label: "Kategori", icon: Tag },
+                {
+                    id: "books-contents",
+                    label: "Kelola Isi Buku",
+                    icon: List,
+                },
+                // { id: "categories", label: "Kategori", icon: Tag }, // Disabled
             ],
         },
         { id: "users", label: "Pengguna", icon: Users },

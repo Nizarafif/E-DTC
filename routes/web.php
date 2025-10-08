@@ -21,11 +21,16 @@ Route::withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken
     Route::delete('/books/{id}', [BookController::class, 'destroy']);
     Route::get('/categories', [CategoryController::class, 'index']);
     Route::post('/categories', [CategoryController::class, 'store']);
+    Route::get('/categories/{id}', [CategoryController::class, 'show']);
+    Route::put('/categories/{id}', [CategoryController::class, 'update']);
     Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
+    Route::get('/categories-options', [CategoryController::class, 'options']);
 
     // BookContent routes
     Route::get('/book-contents', [BookContentController::class, 'index']);
     Route::post('/book-contents', [BookContentController::class, 'store']);
+    Route::post('/book-contents/pdf', [BookContentController::class, 'storePDF']);
+    Route::post('/book-contents/upload-image', [BookContentController::class, 'uploadImage']);
     Route::get('/book-contents/{id}', [BookContentController::class, 'show']);
     Route::put('/book-contents/{id}', [BookContentController::class, 'update']);
     Route::delete('/book-contents/{id}', [BookContentController::class, 'destroy']);

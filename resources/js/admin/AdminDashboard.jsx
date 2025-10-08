@@ -14,8 +14,9 @@ import MainContent from "./components/MainContent";
 import DashboardOverview from "./components/DashboardOverview";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { BooksPage } from "./pages/books";
-import { CategoriesPage } from "./pages/categories";
+// import { CategoriesPage } from "./pages/categories"; // Disabled
 import BookContentPage from "./pages/books/BookContentPage";
+import BookContentsPage from "./pages/books/BookContentsPage";
 
 const AdminDashboard = ({ onLogout }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
@@ -41,10 +42,25 @@ const AdminDashboard = ({ onLogout }) => {
                 { label: "Dashboard", href: "#" },
                 { label: "Kelola Buku", href: "#" },
             ],
-            categories: [
+            "books-add": [
                 { label: "Dashboard", href: "#" },
-                { label: "Kategori", href: "#" },
+                { label: "Kelola Buku", href: "#" },
+                { label: "Tambah Buku", href: "#" },
             ],
+            "books-content": [
+                { label: "Dashboard", href: "#" },
+                { label: "Kelola Buku", href: "#" },
+                { label: "Tambah Isi Buku", href: "#" },
+            ],
+            "books-contents": [
+                { label: "Dashboard", href: "#" },
+                { label: "Kelola Buku", href: "#" },
+                { label: "Kelola Isi Buku", href: "#" },
+            ],
+            // categories: [
+            //     { label: "Dashboard", href: "#" },
+            //     { label: "Kategori", href: "#" },
+            // ], // Disabled
             users: [
                 { label: "Dashboard", href: "#" },
                 { label: "Pengguna", href: "#" },
@@ -69,7 +85,10 @@ const AdminDashboard = ({ onLogout }) => {
         const titleMap = {
             dashboard: "Dashboard",
             books: "Kelola Buku",
-            categories: "Kategori",
+            "books-add": "Tambah Buku",
+            "books-content": "Tambah Isi Buku",
+            "books-contents": "Kelola Isi Buku",
+            // categories: "Kategori", // Disabled
             users: "Pengguna",
             analytics: "Analitik",
             library: "Perpustakaan",
@@ -88,8 +107,10 @@ const AdminDashboard = ({ onLogout }) => {
                 return <BooksPage showAddModal={true} />;
             case "books-content":
                 return <BookContentPage />;
-            case "categories":
-                return <CategoriesPage />;
+            case "books-contents":
+                return <BookContentsPage />;
+            // case "categories":
+            //     return <CategoriesPage />; // Disabled
             case "users":
                 return (
                     <motion.div

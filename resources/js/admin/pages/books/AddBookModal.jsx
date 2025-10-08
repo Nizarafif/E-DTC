@@ -35,13 +35,15 @@ import {
     Image as ImageIcon,
     X,
 } from "lucide-react";
+import CategorySelector from "../../components/CategorySelector";
+import AddCategoryModal from "../categories/AddCategoryModal";
 
 const AddBookModal = ({ isOpen, onClose, onBookAdded }) => {
     const [formData, setFormData] = useState({
         code: "",
         title: "",
         author: "",
-        category: "",
+        category: null,
         description: "",
         publishDate: "",
         isbn: "",
@@ -61,18 +63,7 @@ const AddBookModal = ({ isOpen, onClose, onBookAdded }) => {
     const uploadBgColor = useColorModeValue("gray.50", "gray.700");
     const uploadHoverBgColor = useColorModeValue("teal.50", "gray.600");
 
-    const categories = [
-        "Teknologi",
-        "Bisnis",
-        "Pendidikan",
-        "Kesehatan",
-        "Seni & Desain",
-        "Sains",
-        "Sejarah",
-        "Biografi",
-        "Fiksi",
-        "Non-Fiksi",
-    ];
+    const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -80,6 +71,26 @@ const AddBookModal = ({ isOpen, onClose, onBookAdded }) => {
             ...prev,
             [name]: value,
         }));
+    };
+
+    const handleCategoryChange = (category) => {
+        setFormData((prev) => ({
+            ...prev,
+            category: category,
+        }));
+    };
+
+    const handleAddCategory = () => {
+        setIsAddCategoryModalOpen(true);
+    };
+
+    const handleCategoryAdded = (newCategory) => {
+        // Set the newly added category as selected
+        setFormData((prev) => ({
+            ...prev,
+            category: newCategory,
+        }));
+        setIsAddCategoryModalOpen(false);
     };
 
     const handleImageUpload = (e) => {
@@ -131,7 +142,7 @@ const AddBookModal = ({ isOpen, onClose, onBookAdded }) => {
             code: "",
             title: "",
             author: "",
-            category: "",
+            category: null,
             description: "",
             publishDate: "",
             isbn: "",
@@ -174,7 +185,7 @@ const AddBookModal = ({ isOpen, onClose, onBookAdded }) => {
             const formDataToSend = new FormData();
             formDataToSend.append("title", formData.title);
             formDataToSend.append("author", formData.author);
-            formDataToSend.append("category", formData.category);
+            formDataToSend.append("category", formData.category?.name || "");
             formDataToSend.append("description", formData.description || "");
             formDataToSend.append("publish_date", formData.publishDate || "");
             formDataToSend.append("isbn", formData.isbn || "");
@@ -538,29 +549,17 @@ const AddBookModal = ({ isOpen, onClose, onBookAdded }) => {
                                                         <Text>Kategori</Text>
                                                     </HStack>
                                                 </FormLabel>
-                                                <Select
-                                                    name="category"
+                                                <CategorySelector
                                                     value={formData.category}
-                                                    onChange={handleInputChange}
+                                                    onChange={
+                                                        handleCategoryChange
+                                                    }
                                                     placeholder="Pilih kategori"
-                                                    borderRadius="lg"
-                                                    _focus={{
-                                                        borderColor: "teal.500",
-                                                        boxShadow:
-                                                            "0 0 0 1px teal.500",
-                                                    }}
-                                                >
-                                                    {categories.map(
-                                                        (category) => (
-                                                            <option
-                                                                key={category}
-                                                                value={category}
-                                                            >
-                                                                {category}
-                                                            </option>
-                                                        )
-                                                    )}
-                                                </Select>
+                                                    onAddCategory={
+                                                        handleAddCategory
+                                                    }
+                                                    showAddButton={true}
+                                                />
                                             </FormControl>
 
                                             <FormControl>
@@ -780,6 +779,24 @@ const AddBookModal = ({ isOpen, onClose, onBookAdded }) => {
                     </ModalContent>
                 </Modal>
             )}
+
+            {/* Add Category Modal */}
+            <AddCategoryModal
+                isOpen={isAddCategoryModalOpen}
+                onClose={() => setIsAddCategoryModalOpen(false)}
+                onCategoryAdded={handleCategoryAdded}
+                colorOptions={[
+                    { value: "blue", label: "Biru", color: "blue.500" },
+                    { value: "green", label: "Hijau", color: "green.500" },
+                    { value: "purple", label: "Ungu", color: "purple.500" },
+                    { value: "orange", label: "Oranye", color: "orange.500" },
+                    { value: "red", label: "Merah", color: "red.500" },
+                    { value: "pink", label: "Pink", color: "pink.500" },
+                    { value: "teal", label: "Teal", color: "teal.500" },
+                    { value: "yellow", label: "Kuning", color: "yellow.500" },
+                    { value: "gray", label: "Abu-abu", color: "gray.500" },
+                ]}
+            />
         </AnimatePresence>
     );
 };

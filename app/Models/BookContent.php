@@ -14,6 +14,8 @@ class BookContent extends Model
         'chapter_number',
         'chapter_title',
         'content',
+        'content_type',
+        'pdf_path',
         'order_index',
     ];
 

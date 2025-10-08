@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, Suspense } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
     Box,
@@ -20,10 +21,16 @@ import {
     Spinner,
     Alert,
     AlertIcon,
+    Tabs,
+    TabList,
+    TabPanels,
+    Tab,
+    TabPanel,
 } from "@chakra-ui/react";
-import { Save, BookOpen, FileText, Plus } from "lucide-react";
-import QuillEditor from "../../components/QuillEditor.jsx";
-import "quill/dist/quill.snow.css";
+import { Save, BookOpen, FileText, Plus, Upload, Edit3 } from "lucide-react";
+import { CKEditor } from "@ckeditor/ckeditor5-react";
+import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
+import PDFUploader from "../../components/PDFUploader.jsx";
 
 const BookContentPage = () => {
     const [books, setBooks] = useState([]);
@@ -31,9 +38,11 @@ const BookContentPage = () => {
     const [chapterTitle, setChapterTitle] = useState("");
     const [chapterNumber, setChapterNumber] = useState("");
     const [content, setContent] = useState("");
+    const [uploadedPDF, setUploadedPDF] = useState(null);
+    const [contentType, setContentType] = useState("editor"); // "editor" or "pdf"
     const [isLoading, setIsLoading] = useState(false);
     const [isFetchingBooks, setIsFetchingBooks] = useState(true);
-    const quillRef = useRef(null);
+    const navigate = useNavigate();
     const toast = useToast();
 
     const bgColor = useColorModeValue("white", "gray.800");
@@ -43,47 +52,99 @@ const BookContentPage = () => {
     const inputBg = useColorModeValue("white", "gray.700");
     const editorBg = useColorModeValue("white", "gray.700");
 
-    // Quill modules configuration
-    const modules = {
-        toolbar: [
-            [{ header: [1, 2, 3, 4, 5, 6, false] }],
-            ["bold", "italic", "underline", "strike"],
-            [{ color: [] }, { background: [] }],
-            [{ font: [] }, { size: ["small", false, "large", "huge"] }],
-            [{ align: [] }],
-            [{ list: "ordered" }, { list: "bullet" }],
-            [{ indent: "-1" }, { indent: "+1" }],
-            ["link", "image", "video"],
-            ["blockquote", "code-block"],
-            [{ script: "sub" }, { script: "super" }],
-            ["clean"],
-        ],
-        blotFormatter: {
-            // opsi default cukup, bisa diatur align/resize presets
-        },
-        imageDrop: true,
+    // CKEditor 5 configuration
+    const handleImageUpload = async (file) => {
+        const formData = new FormData();
+        formData.append("image", file);
+        formData.append(
+            "_token",
+            document
+                .querySelector('meta[name="csrf-token"]')
+                ?.getAttribute("content") || ""
+        );
+
+        try {
+            const response = await fetch("/book-contents/upload-image", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error("Upload failed");
+            }
+
+            const data = await response.json();
+            return { default: data.url };
+        } catch (error) {
+            console.error("Image upload error:", error);
+            // Fallback to base64 if upload fails
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve({ default: reader.result });
+                reader.readAsDataURL(file);
+            });
+        }
     };
 
-    const formats = [
-        "header",
-        "font",
-        "size",
-        "bold",
-        "italic",
-        "underline",
-        "strike",
-        "color",
-        "background",
-        "align",
-        "list",
-        "indent",
-        "link",
-        "image",
-        "video",
-        "blockquote",
-        "code-block",
-        "script",
-    ];
+    // CKEditor upload adapter class
+    class MyUploadAdapter {
+        constructor(loader) {
+            this.loader = loader;
+        }
+
+        upload() {
+            return this.loader.file.then(
+                (file) =>
+                    new Promise((resolve, reject) => {
+                        console.log("Uploading file:", file);
+
+                        const body = new FormData();
+                        body.append("image", file);
+                        body.append(
+                            "_token",
+                            document
+                                .querySelector('meta[name="csrf-token"]')
+                                ?.getAttribute("content") || ""
+                        );
+
+                        console.log(
+                            "Sending request to /book-contents/upload-image"
+                        );
+
+                        fetch("/book-contents/upload-image", {
+                            method: "POST",
+                            body: body,
+                        })
+                            .then((response) => {
+                                console.log(
+                                    "Response status:",
+                                    response.status
+                                );
+                                if (!response.ok) {
+                                    throw new Error(
+                                        `HTTP error! status: ${response.status}`
+                                    );
+                                }
+                                return response.json();
+                            })
+                            .then((result) => {
+                                console.log("Upload result:", result);
+                                resolve({
+                                    default: result.url,
+                                });
+                            })
+                            .catch((error) => {
+                                console.error("Upload error:", error);
+                                reject(error);
+                            });
+                    })
+            );
+        }
+
+        abort() {
+            console.log("Upload aborted");
+        }
+    }
 
     // Fetch books on component mount
     useEffect(() => {
@@ -112,6 +173,24 @@ const BookContentPage = () => {
         }
     };
 
+    const handlePDFUpload = (pdfFile) => {
+        setUploadedPDF(pdfFile);
+        setContentType("pdf");
+
+        // Auto-fill chapter title from PDF filename
+        if (!chapterTitle.trim()) {
+            const fileName = pdfFile.name
+                .replace(".pdf", "")
+                .replace(/[-_]/g, " ");
+            setChapterTitle(fileName);
+        }
+    };
+
+    const handleRemovePDF = () => {
+        setUploadedPDF(null);
+        setContentType("editor");
+    };
+
     const handleSaveContent = async () => {
         if (!selectedBookId) {
             toast({
@@ -123,7 +202,7 @@ const BookContentPage = () => {
             return;
         }
 
-        if (!chapterTitle.trim()) {
+        if (contentType === "editor" && !chapterTitle.trim()) {
             toast({
                 title: "Error",
                 description: "Judul chapter harus diisi",
@@ -133,38 +212,79 @@ const BookContentPage = () => {
             return;
         }
 
-        // Get content from Quill editor
-        const editorContent = content;
-
-        if (!editorContent.trim()) {
-            toast({
-                title: "Error",
-                description: "Konten chapter harus diisi",
-                status: "error",
-                duration: 3000,
-            });
-            return;
+        // Validasi berdasarkan tipe konten
+        if (contentType === "editor") {
+            if (!content.trim()) {
+                toast({
+                    title: "Error",
+                    description: "Konten chapter harus diisi",
+                    status: "error",
+                    duration: 3000,
+                });
+                return;
+            }
+        } else if (contentType === "pdf") {
+            if (!uploadedPDF) {
+                toast({
+                    title: "Error",
+                    description: "File PDF harus diupload",
+                    status: "error",
+                    duration: 3000,
+                });
+                return;
+            }
         }
 
         setIsLoading(true);
 
         try {
-            const response = await fetch("/book-contents", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                },
-                body: JSON.stringify({
+            let response;
+
+            if (contentType === "pdf") {
+                // Upload PDF file
+                const formData = new FormData();
+                formData.append("book_id", selectedBookId);
+                formData.append("chapter_number", chapterNumber || "");
+                formData.append(
+                    "chapter_title",
+                    chapterTitle || uploadedPDF.name.replace(".pdf", "")
+                );
+                formData.append("pdf_file", uploadedPDF);
+                formData.append("content_type", "pdf");
+
+                console.log("Sending PDF upload:", {
                     book_id: selectedBookId,
-                    chapter_number: chapterNumber || null,
                     chapter_title: chapterTitle,
-                    content: editorContent,
-                }),
-            });
+                    file_name: uploadedPDF.name,
+                    file_size: uploadedPDF.size,
+                    file_type: uploadedPDF.type,
+                });
+
+                response = await fetch("/book-contents/pdf", {
+                    method: "POST",
+                    body: formData,
+                });
+            } else {
+                // Save editor content
+                response = await fetch("/book-contents", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                    },
+                    body: JSON.stringify({
+                        book_id: selectedBookId,
+                        chapter_number: chapterNumber || null,
+                        chapter_title: chapterTitle,
+                        content: content,
+                        content_type: "editor",
+                    }),
+                });
+            }
 
             if (!response.ok) {
                 const errorData = await response.json();
+                console.error("Server error:", errorData);
                 throw new Error(errorData.message || "Gagal menyimpan konten");
             }
 
@@ -175,10 +295,13 @@ const BookContentPage = () => {
                 duration: 3000,
             });
 
-            // Reset form
+            // Reset form dan alihkan ke Kategori
             setChapterTitle("");
             setChapterNumber("");
             setContent("");
+            setUploadedPDF(null);
+            setContentType("editor");
+            navigate("/admin?tab=categories");
         } catch (error) {
             console.error("Error saving content:", error);
             toast({
@@ -350,22 +473,34 @@ const BookContentPage = () => {
                                     fontSize="sm"
                                     fontWeight="medium"
                                 >
-                                    Judul Chapter *
+                                    Judul Chapter{" "}
+                                    {contentType === "editor"
+                                        ? "*"
+                                        : "(Opsional)"}
                                 </FormLabel>
                                 <Input
                                     id="chapter-title"
-                                    placeholder="Masukkan judul chapter atau bagian"
+                                    placeholder={
+                                        contentType === "pdf"
+                                            ? "Akan otomatis terisi dari nama file PDF"
+                                            : "Masukkan judul chapter atau bagian"
+                                    }
                                     value={chapterTitle}
                                     onChange={(e) =>
                                         setChapterTitle(e.target.value)
                                     }
                                     bg={inputBg}
                                     borderColor={borderColor}
+                                    isDisabled={
+                                        contentType === "pdf" && uploadedPDF
+                                    }
                                 />
                             </FormControl>
                         </HStack>
                     </CardBody>
                 </Card>
+
+                {/* Daftar chapter dihapus sesuai permintaan */}
 
                 {/* Content Editor */}
                 <Card bg={bgColor} border="1px" borderColor={borderColor}>
@@ -381,32 +516,128 @@ const BookContentPage = () => {
                         </HStack>
                     </CardHeader>
                     <CardBody pt={2}>
-                        <Box
-                            className="book-editor"
-                            border="1px"
-                            borderColor={borderColor}
-                            borderRadius="lg"
-                            overflow="hidden"
-                            bg={editorBg}
+                        <Tabs
+                            index={contentType === "editor" ? 0 : 1}
+                            onChange={(index) =>
+                                setContentType(index === 0 ? "editor" : "pdf")
+                            }
                         >
-                            <QuillEditor
-                                value={content}
-                                onChange={setContent}
-                                modules={modules}
-                                formats={formats}
-                                placeholder="Mulai menulis konten chapter di sini..."
-                                style={{
-                                    minHeight: "450px",
-                                    backgroundColor: editorBg,
-                                }}
-                            />
-                        </Box>
-                        <Text fontSize="xs" color="gray.500" mt={2}>
-                            React Quill Editor dengan fitur rich text:
-                            formatting teks, colors, fonts, alignment, lists,
-                            links, images, videos, blockquotes, code blocks, dan
-                            subscript/superscript.
-                        </Text>
+                            <TabList>
+                                <Tab>
+                                    <HStack spacing={2}>
+                                        <Edit3 size={16} />
+                                        <Text>Editor Manual</Text>
+                                    </HStack>
+                                </Tab>
+                                <Tab>
+                                    <HStack spacing={2}>
+                                        <Upload size={16} />
+                                        <Text>Upload PDF</Text>
+                                    </HStack>
+                                </Tab>
+                            </TabList>
+
+                            <TabPanels>
+                                <TabPanel px={0} py={4}>
+                                    <Box
+                                        className="book-editor"
+                                        border="1px"
+                                        borderColor={borderColor}
+                                        borderRadius="lg"
+                                        overflow="hidden"
+                                        bg={editorBg}
+                                    >
+                                        <CKEditor
+                                            editor={ClassicEditor}
+                                            data={content}
+                                            onChange={(event, editor) => {
+                                                const data = editor.getData();
+                                                setContent(data);
+                                            }}
+                                            onReady={(editor) => {
+                                                console.log(
+                                                    "CKEditor ready, registering upload adapter"
+                                                );
+                                                // Register upload adapter
+                                                editor.plugins.get(
+                                                    "FileRepository"
+                                                ).createUploadAdapter = (
+                                                    loader
+                                                ) => {
+                                                    console.log(
+                                                        "Creating upload adapter for loader:",
+                                                        loader
+                                                    );
+                                                    return new MyUploadAdapter(
+                                                        loader
+                                                    );
+                                                };
+                                            }}
+                                            config={{
+                                                licenseKey: "GPL",
+                                                placeholder:
+                                                    "Mulai menulis konten chapter di sini...",
+                                                toolbar: [
+                                                    "heading",
+                                                    "|",
+                                                    "bold",
+                                                    "italic",
+                                                    "|",
+                                                    "bulletedList",
+                                                    "numberedList",
+                                                    "|",
+                                                    "link",
+                                                    "insertImage",
+                                                    "insertTable",
+                                                    "|",
+                                                    "blockQuote",
+                                                    "|",
+                                                    "undo",
+                                                    "redo",
+                                                ],
+                                                image: {
+                                                    toolbar: [
+                                                        "imageTextAlternative",
+                                                        "|",
+                                                        "imageStyle:alignLeft",
+                                                        "imageStyle:alignCenter",
+                                                        "imageStyle:alignRight",
+                                                        "|",
+                                                        "imageStyle:side",
+                                                        "imageStyle:wrapText",
+                                                        "imageStyle:breakText",
+                                                    ],
+                                                },
+                                                table: {
+                                                    contentToolbar: [
+                                                        "tableColumn",
+                                                        "tableRow",
+                                                        "mergeTableCells",
+                                                    ],
+                                                },
+                                                // Upload adapter akan didaftarkan secara otomatis
+                                            }}
+                                        />
+                                    </Box>
+                                    <Text fontSize="xs" color="gray.500" mt={2}>
+                                        CKEditor 5 - Editor gratis dan powerful:
+                                        headings, bold, italic, lists, links,
+                                        images, tables, blockquotes, dan
+                                        copy-paste gambar langsung dari
+                                        clipboard!
+                                    </Text>
+                                </TabPanel>
+
+                                <TabPanel px={0} py={4}>
+                                    <PDFUploader
+                                        onPDFUpload={handlePDFUpload}
+                                        onRemovePDF={handleRemovePDF}
+                                        uploadedPDF={uploadedPDF}
+                                        isLoading={isLoading}
+                                    />
+                                </TabPanel>
+                            </TabPanels>
+                        </Tabs>
                     </CardBody>
                 </Card>
 
@@ -421,8 +652,9 @@ const BookContentPage = () => {
                         loadingText="Menyimpan..."
                         disabled={
                             !selectedBookId ||
-                            !chapterTitle.trim() ||
-                            !content.trim()
+                            (contentType === "editor" &&
+                                (!chapterTitle.trim() || !content.trim())) ||
+                            (contentType === "pdf" && !uploadedPDF)
                         }
                         px={8}
                     >

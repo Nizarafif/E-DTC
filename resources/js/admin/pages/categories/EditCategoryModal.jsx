@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import {
     Modal,
     ModalOverlay,
@@ -9,237 +9,172 @@ import {
     ModalBody,
     ModalCloseButton,
     Button,
-    FormControl,
-    FormLabel,
-    Input,
-    Textarea,
     VStack,
     HStack,
-    Box,
     Text,
-    Image,
+    Input,
+    Textarea,
+    Select,
+    FormControl,
+    FormLabel,
+    FormErrorMessage,
     useColorModeValue,
     useToast,
+    Box,
+    SimpleGrid,
+    Badge,
+    IconButton,
+    Tooltip,
     Divider,
-    Select,
 } from "@chakra-ui/react";
-import {
-    Upload,
-    Tag,
-    FileText,
-    Image as ImageIcon,
-    X,
-    Palette,
-    Edit3,
-} from "lucide-react";
+import { Tag, Palette, Upload, X, Check, Save } from "lucide-react";
 
 const EditCategoryModal = ({
     isOpen,
     onClose,
     category,
     onCategoryUpdated,
+    colorOptions,
 }) => {
     const [formData, setFormData] = useState({
         name: "",
         description: "",
-        color: "teal",
+        color: "blue",
         status: "active",
+        icon: "",
     });
-    const [iconImage, setIconImage] = useState(null);
-    const [iconPreview, setIconPreview] = useState(null);
+    const [errors, setErrors] = useState({});
     const [isLoading, setIsLoading] = useState(false);
-    const fileInputRef = useRef(null);
-    const toast = useToast();
 
     const bgColor = useColorModeValue("white", "gray.800");
-    const borderColor = useColorModeValue("gray.200", "gray.600");
     const textColor = useColorModeValue("gray.700", "gray.200");
+    const borderColor = useColorModeValue("gray.200", "gray.600");
+    const toast = useToast();
 
-    const colorOptions = [
-        { value: "teal", label: "Teal", color: "teal.500" },
-        { value: "blue", label: "Biru", color: "blue.500" },
-        { value: "green", label: "Hijau", color: "green.500" },
-        { value: "purple", label: "Ungu", color: "purple.500" },
-        { value: "orange", label: "Oranye", color: "orange.500" },
-        { value: "red", label: "Merah", color: "red.500" },
-        { value: "pink", label: "Pink", color: "pink.500" },
-        { value: "yellow", label: "Kuning", color: "yellow.500" },
-    ];
-
-    // Populate form when category changes
+    // Update form data when category changes
     useEffect(() => {
         if (category) {
             setFormData({
                 name: category.name || "",
                 description: category.description || "",
-                color: category.color || "teal",
+                color: category.color || "blue",
                 status: category.status || "active",
+                icon: category.icon || "",
             });
-            setIconPreview(category.icon || null);
         }
     }, [category]);
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
+    const handleInputChange = (field, value) => {
         setFormData((prev) => ({
             ...prev,
-            [name]: value,
+            [field]: value,
         }));
-    };
 
-    const handleImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            // Validasi file
-            if (!file.type.startsWith("image/")) {
-                toast({
-                    title: "Error",
-                    description: "File harus berupa gambar",
-                    status: "error",
-                    duration: 3000,
-                    isClosable: true,
-                });
-                return;
-            }
-
-            if (file.size > 2 * 1024 * 1024) {
-                // 2MB limit
-                toast({
-                    title: "Error",
-                    description: "Ukuran file maksimal 2MB",
-                    status: "error",
-                    duration: 3000,
-                    isClosable: true,
-                });
-                return;
-            }
-
-            setIconImage(file);
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                setIconPreview(e.target.result);
-            };
-            reader.readAsDataURL(file);
+        // Clear error when user starts typing
+        if (errors[field]) {
+            setErrors((prev) => ({
+                ...prev,
+                [field]: "",
+            }));
         }
     };
 
-    const handleRemoveImage = () => {
-        setIconImage(null);
-        setIconPreview(null);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
+    const validateForm = () => {
+        const newErrors = {};
+
+        if (!formData.name.trim()) {
+            newErrors.name = "Nama kategori wajib diisi";
+        } else if (formData.name.trim().length < 2) {
+            newErrors.name = "Nama kategori minimal 2 karakter";
         }
+
+        if (formData.description && formData.description.length > 200) {
+            newErrors.description = "Deskripsi maksimal 200 karakter";
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setIsLoading(true);
 
+        if (!validateForm()) {
+            return;
+        }
+
+        setIsLoading(true);
         try {
-            // Validasi form
-            if (!formData.name) {
-                toast({
-                    title: "Error",
-                    description: "Nama kategori wajib diisi",
-                    status: "error",
-                    duration: 3000,
-                    isClosable: true,
-                });
-                setIsLoading(false);
-                return;
+            const response = await fetch(`/categories/${category.id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                },
+                body: JSON.stringify({
+                    ...formData,
+                    name: formData.name.trim(),
+                    description: formData.description.trim() || null,
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(
+                    errorData.message || "Gagal memperbarui kategori"
+                );
             }
 
-            // Simulasi API call
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-
-            // Create updated category object
-            const updatedCategory = {
-                ...category,
-                ...formData,
-                icon: iconPreview,
-                updatedAt: new Date().toISOString(),
-            };
+            const updatedCategory = await response.json();
+            onCategoryUpdated(updatedCategory);
+            onClose();
 
             toast({
                 title: "Berhasil",
                 description: "Kategori berhasil diperbarui",
                 status: "success",
-                duration: 3000,
+                duration: 2000,
                 isClosable: true,
+                position: "top-right",
             });
-
-            // Callback to parent component
-            if (onCategoryUpdated) {
-                onCategoryUpdated(updatedCategory);
-            }
-
-            onClose();
         } catch (error) {
             toast({
                 title: "Error",
-                description: "Gagal memperbarui kategori",
+                description: error.message,
                 status: "error",
                 duration: 3000,
                 isClosable: true,
+                position: "top-right",
             });
         } finally {
             setIsLoading(false);
         }
     };
 
-    const modalVariants = {
-        hidden: {
-            opacity: 0,
-            scale: 0.8,
-            y: 50,
-        },
-        visible: {
-            opacity: 1,
-            scale: 1,
-            y: 0,
-            transition: {
-                duration: 0.3,
-                ease: "easeOut",
-            },
-        },
-        exit: {
-            opacity: 0,
-            scale: 0.8,
-            y: 50,
-            transition: {
-                duration: 0.2,
-            },
-        },
+    const handleClose = () => {
+        setFormData({
+            name: "",
+            description: "",
+            color: "blue",
+            status: "active",
+            icon: "",
+        });
+        setErrors({});
+        onClose();
     };
 
     if (!category) return null;
 
     return (
-        <AnimatePresence>
-            {isOpen && (
-                <Modal
-                    isOpen={isOpen}
-                    onClose={onClose}
-                    size="lg"
-                    closeOnOverlayClick={false}
+        <Modal isOpen={isOpen} onClose={handleClose} size="xl" isCentered>
+            <ModalOverlay />
+            <ModalContent bg={bgColor} borderRadius="2xl">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.2 }}
                 >
-                    <ModalOverlay
-                        bg="blackAlpha.600"
-                        backdropFilter="blur(10px)"
-                    />
-                    <ModalContent
-                        as={motion.div}
-                        variants={modalVariants}
-                        initial="hidden"
-                        animate="visible"
-                        exit="exit"
-                        bg={bgColor}
-                        borderRadius="2xl"
-                        border="1px"
-                        borderColor={borderColor}
-                        shadow="2xl"
-                    >
-                        <ModalHeader pb={2}>
+                    <ModalHeader>
                             <HStack spacing={3}>
                                 <Box
                                     p={2}
@@ -247,182 +182,56 @@ const EditCategoryModal = ({
                                     borderRadius="lg"
                                     color="blue.600"
                                 >
-                                    <Edit3 size={20} />
+                                <Tag size={20} />
                                 </Box>
-                                <VStack align="start" spacing={0}>
-                                    <Text fontSize="xl" fontWeight="bold">
+                            <VStack align="start" spacing={1}>
+                                <Text
+                                    fontSize="xl"
+                                    fontWeight="bold"
+                                    color={textColor}
+                                >
                                         Edit Kategori
                                     </Text>
                                     <Text fontSize="sm" color="gray.500">
-                                        Perbarui informasi kategori
+                                    Perbarui informasi kategori "{category.name}
+                                    "
                                     </Text>
                                 </VStack>
                             </HStack>
                         </ModalHeader>
                         <ModalCloseButton />
 
-                        <Divider />
-
-                        <ModalBody py={4}>
+                    <ModalBody pb={6}>
                             <form onSubmit={handleSubmit}>
-                                <VStack spacing={4} align="stretch">
-                                    {/* Icon Upload */}
-                                    <FormControl>
-                                        <FormLabel
-                                            fontSize="sm"
-                                            fontWeight="600"
-                                            color={textColor}
-                                        >
-                                            <HStack spacing={2}>
-                                                <ImageIcon size={16} />
-                                                <Text>
-                                                    Icon Kategori (Opsional)
-                                                </Text>
-                                            </HStack>
-                                        </FormLabel>
-                                        <Box
-                                            border="2px"
-                                            borderColor={
-                                                iconPreview
-                                                    ? "blue.300"
-                                                    : borderColor
-                                            }
-                                            borderStyle="dashed"
-                                            borderRadius="xl"
-                                            p={3}
-                                            textAlign="center"
-                                            bg={useColorModeValue(
-                                                "gray.50",
-                                                "gray.700"
-                                            )}
-                                            cursor="pointer"
-                                            transition="all 0.2s"
-                                            _hover={{
-                                                borderColor: "blue.400",
-                                                bg: useColorModeValue(
-                                                    "blue.50",
-                                                    "gray.600"
-                                                ),
-                                            }}
-                                            onClick={() =>
-                                                fileInputRef.current?.click()
-                                            }
-                                        >
-                                            {iconPreview ? (
-                                                <HStack
-                                                    spacing={4}
-                                                    justify="center"
-                                                >
-                                                    <Box position="relative">
-                                                        <Image
-                                                            src={iconPreview}
-                                                            alt="Icon preview"
-                                                            w="50px"
-                                                            h="50px"
-                                                            objectFit="cover"
-                                                            borderRadius="lg"
-                                                            shadow="sm"
-                                                        />
-                                                        <Button
-                                                            size="xs"
-                                                            colorScheme="red"
-                                                            variant="solid"
-                                                            position="absolute"
-                                                            top={-1}
-                                                            right={-1}
-                                                            borderRadius="full"
-                                                            minW="auto"
-                                                            h="20px"
-                                                            w="20px"
-                                                            p={0}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleRemoveImage();
-                                                            }}
-                                                        >
-                                                            <X size={10} />
-                                                        </Button>
-                                                    </Box>
-                                                    <VStack
-                                                        spacing={1}
-                                                        align="start"
-                                                    >
+                            <VStack spacing={6} align="stretch">
+                                {/* Basic Information */}
+                                <Box>
                                                         <Text
-                                                            fontSize="sm"
-                                                            fontWeight="600"
+                                        fontSize="lg"
+                                        fontWeight="semibold"
                                                             color={textColor}
-                                                        >
-                                                            Icon berhasil
-                                                            dipilih
+                                        mb={4}
+                                    >
+                                        Informasi Dasar
                                                         </Text>
-                                                        <Text
-                                                            fontSize="xs"
-                                                            color="gray.500"
-                                                        >
-                                                            Klik untuk mengganti
-                                                        </Text>
-                                                    </VStack>
-                                                </HStack>
-                                            ) : (
-                                                <HStack
-                                                    spacing={3}
-                                                    justify="center"
-                                                >
-                                                    <Box
-                                                        p={3}
-                                                        bg="blue.100"
-                                                        borderRadius="lg"
-                                                        color="blue.600"
-                                                    >
-                                                        <Upload size={20} />
-                                                    </Box>
-                                                    <VStack
-                                                        spacing={0}
-                                                        align="start"
-                                                    >
-                                                        <Text
-                                                            fontSize="sm"
-                                                            fontWeight="600"
-                                                            color={textColor}
-                                                        >
-                                                            Upload Icon
-                                                        </Text>
-                                                        <Text
-                                                            fontSize="xs"
-                                                            color="gray.500"
-                                                        >
-                                                            PNG, JPG hingga 2MB
-                                                        </Text>
-                                                    </VStack>
-                                                </HStack>
-                                            )}
-                                            <Input
-                                                ref={fileInputRef}
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={handleImageUpload}
-                                                display="none"
-                                            />
-                                        </Box>
-                                    </FormControl>
-
-                                    {/* Basic Information */}
                                     <VStack spacing={4} align="stretch">
-                                        <FormControl isRequired>
+                                        <FormControl isInvalid={!!errors.name}>
                                             <FormLabel
                                                 fontSize="sm"
-                                                fontWeight="600"
+                                                fontWeight="medium"
+                                                color={textColor}
                                             >
-                                                <HStack spacing={2}>
-                                                    <Tag size={16} />
-                                                    <Text>Nama Kategori</Text>
-                                                </HStack>
+                                                Nama Kategori *
                                             </FormLabel>
                                             <Input
-                                                name="name"
-                                                value={formData.name}
-                                                onChange={handleInputChange}
                                                 placeholder="Masukkan nama kategori"
+                                                value={formData.name}
+                                                onChange={(e) =>
+                                                    handleInputChange(
+                                                        "name",
+                                                        e.target.value
+                                                    )
+                                                }
                                                 borderRadius="lg"
                                                 _focus={{
                                                     borderColor: "blue.500",
@@ -430,24 +239,32 @@ const EditCategoryModal = ({
                                                         "0 0 0 1px blue.500",
                                                 }}
                                             />
+                                            <FormErrorMessage>
+                                                {errors.name}
+                                            </FormErrorMessage>
                                         </FormControl>
 
-                                        <FormControl>
+                                        <FormControl
+                                            isInvalid={!!errors.description}
+                                        >
                                             <FormLabel
                                                 fontSize="sm"
-                                                fontWeight="600"
+                                                fontWeight="medium"
+                                                color={textColor}
                                             >
-                                                <HStack spacing={2}>
-                                                    <FileText size={16} />
-                                                    <Text>Deskripsi</Text>
-                                                </HStack>
+                                                Deskripsi
                                             </FormLabel>
                                             <Textarea
-                                                name="description"
+                                                placeholder="Masukkan deskripsi kategori (opsional)"
                                                 value={formData.description}
-                                                onChange={handleInputChange}
-                                                placeholder="Deskripsi singkat tentang kategori"
-                                                rows={2}
+                                                onChange={(e) =>
+                                                    handleInputChange(
+                                                        "description",
+                                                        e.target.value
+                                                    )
+                                                }
+                                                rows={3}
+                                                resize="vertical"
                                                 borderRadius="lg"
                                                 _focus={{
                                                     borderColor: "blue.500",
@@ -455,58 +272,126 @@ const EditCategoryModal = ({
                                                         "0 0 0 1px blue.500",
                                                 }}
                                             />
+                                            <FormErrorMessage>
+                                                {errors.description}
+                                            </FormErrorMessage>
+                                            <Text
+                                                fontSize="xs"
+                                                color="gray.500"
+                                                textAlign="right"
+                                            >
+                                                {formData.description.length}
+                                                /200 karakter
+                                            </Text>
                                         </FormControl>
+                                    </VStack>
+                                </Box>
 
-                                        <HStack spacing={4} align="start">
+                                <Divider />
+
+                                {/* Appearance */}
+                                <Box>
+                                    <Text
+                                        fontSize="lg"
+                                        fontWeight="semibold"
+                                        color={textColor}
+                                        mb={4}
+                                    >
+                                        Tampilan
+                                    </Text>
+                                    <VStack spacing={4} align="stretch">
                                             <FormControl>
                                                 <FormLabel
                                                     fontSize="sm"
-                                                    fontWeight="600"
+                                                fontWeight="medium"
+                                                color={textColor}
                                                 >
-                                                    <HStack spacing={2}>
-                                                        <Palette size={16} />
-                                                        <Text>Warna Tema</Text>
-                                                    </HStack>
+                                                Warna Tema
                                                 </FormLabel>
-                                                <Select
-                                                    name="color"
-                                                    value={formData.color}
-                                                    onChange={handleInputChange}
+                                            <SimpleGrid columns={3} spacing={3}>
+                                                {colorOptions.map((option) => (
+                                                    <Box
+                                                        key={option.value}
+                                                        p={3}
+                                                        border="2px"
+                                                        borderColor={
+                                                            formData.color ===
+                                                            option.value
+                                                                ? option.color
+                                                                : borderColor
+                                                        }
                                                     borderRadius="lg"
-                                                    _focus={{
-                                                        borderColor: "blue.500",
-                                                        boxShadow:
-                                                            "0 0 0 1px blue.500",
-                                                    }}
-                                                >
-                                                    {colorOptions.map(
-                                                        (option) => (
-                                                            <option
-                                                                key={
-                                                                    option.value
+                                                        cursor="pointer"
+                                                        onClick={() =>
+                                                            handleInputChange(
+                                                                "color",
+                                                                option.value
+                                                            )
+                                                        }
+                                                        _hover={{
+                                                            borderColor:
+                                                                option.color,
+                                                            bg: `${option.value}.50`,
+                                                        }}
+                                                        transition="all 0.2s"
+                                                        position="relative"
+                                                    >
+                                                        <VStack spacing={2}>
+                                                            <Box
+                                                                w="24px"
+                                                                h="24px"
+                                                                bg={
+                                                                    option.color
                                                                 }
-                                                                value={
-                                                                    option.value
-                                                                }
+                                                                borderRadius="md"
+                                                            />
+                                                            <Text
+                                                                fontSize="xs"
+                                                                fontWeight="medium"
                                                             >
                                                                 {option.label}
-                                                            </option>
-                                                        )
-                                                    )}
-                                                </Select>
+                                                            </Text>
+                                                            {formData.color ===
+                                                                option.value && (
+                                                                <Box
+                                                                    position="absolute"
+                                                                    top={1}
+                                                                    right={1}
+                                                                    bg="white"
+                                                                    borderRadius="full"
+                                                                    p={1}
+                                                                    shadow="sm"
+                                                                >
+                                                                    <Check
+                                                                        size={
+                                                                            12
+                                                                        }
+                                                                        color="green"
+                                                                    />
+                                                                </Box>
+                                                            )}
+                                                        </VStack>
+                                                    </Box>
+                                                ))}
+                                            </SimpleGrid>
                                             </FormControl>
 
                                             <FormControl>
                                                 <FormLabel
                                                     fontSize="sm"
-                                                    fontWeight="600"
+                                                fontWeight="medium"
+                                                color={textColor}
                                                 >
                                                     Status
                                                 </FormLabel>
                                                 <Select
-                                                    name="status"
                                                     value={formData.status}
-                                                    onChange={handleInputChange}
+                                                onChange={(e) =>
+                                                    handleInputChange(
+                                                        "status",
+                                                        e.target.value
+                                                    )
+                                                }
                                                     borderRadius="lg"
                                                     _focus={{
                                                         borderColor: "blue.500",
@@ -522,20 +407,107 @@ const EditCategoryModal = ({
                                                     </option>
                                                 </Select>
                                             </FormControl>
-                                        </HStack>
                                     </VStack>
+                                </Box>
+
+                                <Divider />
+
+                                {/* Preview */}
+                                <Box>
+                                    <Text
+                                        fontSize="lg"
+                                        fontWeight="semibold"
+                                        color={textColor}
+                                        mb={4}
+                                    >
+                                        Preview
+                                    </Text>
+                                    <Box
+                                        p={4}
+                                        bg={`${formData.color || "blue"}.50`}
+                                        borderRadius="xl"
+                                        border="1px"
+                                        borderColor={`${
+                                            formData.color || "blue"
+                                        }.200`}
+                                    >
+                                        <HStack spacing={3}>
+                                            <Box
+                                                p={3}
+                                                bg={`${
+                                                    formData.color || "blue"
+                                                }.100`}
+                                                borderRadius="xl"
+                                                color={`${
+                                                    formData.color || "blue"
+                                                }.600`}
+                                            >
+                                                <Tag size={24} />
+                                            </Box>
+                                            <VStack
+                                                align="start"
+                                                spacing={1}
+                                                flex={1}
+                                            >
+                                                <Text
+                                                    fontWeight="bold"
+                                                    color={textColor}
+                                                    fontSize="lg"
+                                                >
+                                                    {formData.name ||
+                                                        "Nama Kategori"}
+                                                </Text>
+                                                {formData.description && (
+                                                    <Text
+                                                        fontSize="sm"
+                                                        color="gray.600"
+                                                        noOfLines={2}
+                                                    >
+                                                        {formData.description}
+                                                    </Text>
+                                                )}
+                                                <HStack spacing={2}>
+                                                    <Badge
+                                                        colorScheme={
+                                                            formData.color ||
+                                                            "blue"
+                                                        }
+                                                        variant="subtle"
+                                                        fontSize="xs"
+                                                    >
+                                                        {formData.color ||
+                                                            "blue"}
+                                                    </Badge>
+                                                    <Badge
+                                                        colorScheme={
+                                                            formData.status ===
+                                                            "active"
+                                                                ? "green"
+                                                                : "gray"
+                                                        }
+                                                        variant="subtle"
+                                                        fontSize="xs"
+                                                    >
+                                                        {formData.status ===
+                                                        "active"
+                                                            ? "Aktif"
+                                                            : "Tidak Aktif"}
+                                                    </Badge>
+                                                </HStack>
+                                            </VStack>
+                                        </HStack>
+                                    </Box>
+                                </Box>
                                 </VStack>
                             </form>
                         </ModalBody>
 
-                        <Divider />
-
                         <ModalFooter>
                             <HStack spacing={3}>
                                 <Button
-                                    variant="ghost"
-                                    onClick={onClose}
-                                    disabled={isLoading}
+                                variant="outline"
+                                onClick={handleClose}
+                                isDisabled={isLoading}
                                 >
                                     Batal
                                 </Button>
@@ -544,16 +516,15 @@ const EditCategoryModal = ({
                                     onClick={handleSubmit}
                                     isLoading={isLoading}
                                     loadingText="Menyimpan..."
-                                    leftIcon={<Edit3 size={16} />}
+                                leftIcon={<Save size={16} />}
                                 >
-                                    Perbarui Kategori
+                                Simpan Perubahan
                                 </Button>
                             </HStack>
                         </ModalFooter>
+                </motion.div>
                     </ModalContent>
                 </Modal>
-            )}
-        </AnimatePresence>
     );
 };
 
