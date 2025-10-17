@@ -16,6 +16,7 @@ class BookContent extends Model
         'content',
         'content_type',
         'pdf_path',
+        'docx_path',
         'order_index',
     ];
 
@@ -32,3 +33,6 @@ class BookContent extends Model
         return $this->belongsTo(Book::class);
     }
 }
+
+
+

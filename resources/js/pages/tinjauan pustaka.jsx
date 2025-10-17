@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+// DocxViewer removed
 import { useNavigate, useParams } from "react-router-dom";
 
 // PDF Image Viewer Component
@@ -9,6 +10,8 @@ const PDFImageViewer = ({
     currentPage,
     totalPages,
     onTotalPagesChange,
+    pdfCache,
+    onCacheUpdate,
 }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -17,6 +20,17 @@ const PDFImageViewer = ({
     useEffect(() => {
         const loadPDF = async () => {
             try {
+                // Check cache first
+                if (pdfCache.has(pdfUrl)) {
+                    const cachedData = pdfCache.get(pdfUrl);
+                    setImages(cachedData.images);
+                    if (onTotalPagesChange) {
+                        onTotalPagesChange(cachedData.totalPages);
+                    }
+                    setIsLoading(false);
+                    return;
+                }
+
                 setIsLoading(true);
                 setError(null);
 
@@ -46,8 +60,11 @@ const PDFImageViewer = ({
                     const viewport = page.getViewport({ scale: 1.5 });
 
                     const canvas = document.createElement("canvas");
+                    canvas.setAttribute("willReadFrequently", "true");
                     const context = canvas.getContext("2d", {
                         willReadFrequently: true,
+                        alpha: false,
+                        desynchronized: true,
                     });
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
@@ -60,6 +77,16 @@ const PDFImageViewer = ({
                     await page.render(renderContext).promise;
                     pageImages.push(canvas.toDataURL("image/png"));
                 }
+
+                // Cache the result
+                const cacheData = {
+                    images: pageImages,
+                    totalPages: pdf.numPages,
+                    timestamp: Date.now(),
+                };
+                const newCache = new Map(pdfCache);
+                newCache.set(pdfUrl, cacheData);
+                onCacheUpdate(newCache);
 
                 setImages(pageImages);
                 if (onTotalPagesChange) {
@@ -119,13 +146,7 @@ const PDFImageViewer = ({
 
     return (
         <div className="h-full w-full">
-            <div className="bg-gray-50 p-4 border-b">
-                <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
-                <p className="text-sm text-gray-600">
-                    Halaman {currentPage} dari {totalPages}
-                </p>
-            </div>
-            <div className="h-96 flex items-center justify-center bg-gray-100">
+            <div className="h-full flex items-center justify-center bg-white">
                 {images[currentPage - 1] && (
                     <img
                         src={images[currentPage - 1]}
@@ -147,10 +168,16 @@ const TinjauanPustaka = () => {
     const [chapters, setChapters] = useState([]);
     const [activeChapterIndex, setActiveChapterIndex] = useState(0);
     const [pdfContent, setPdfContent] = useState(null);
+    // DOCX content removed
     const [showPdfViewer, setShowPdfViewer] = useState(false);
     const [pdfPages, setPdfPages] = useState([]);
     const [currentPdfPage, setCurrentPdfPage] = useState(1);
     const [totalPdfPages, setTotalPdfPages] = useState(0);
+    // NEW: daftar semua PDF dan PDF aktif yang sedang ditampilkan
+    const [pdfChapters, setPdfChapters] = useState([]);
+    const [activePdfIndex, setActivePdfIndex] = useState(0);
+    const [expandedPdfIndex, setExpandedPdfIndex] = useState(null);
+    const [pdfCache, setPdfCache] = useState(new Map());
     const readerRef = useRef(null);
 
     const formatCode = (code) => {
@@ -176,6 +203,16 @@ const TinjauanPustaka = () => {
         activeChapterIndex,
         totalPages,
     ]);
+
+    // Ambil total halaman untuk PDF aktif dari cache bila tersedia
+    const activePdf = pdfChapters[activePdfIndex];
+    const activePdfTotalPages = useMemo(() => {
+        if (activePdf && pdfCache.has(activePdf.url)) {
+            const c = pdfCache.get(activePdf.url);
+            return c?.totalPages || 0;
+        }
+        return totalPdfPages;
+    }, [activePdfIndex, pdfChapters, pdfCache, totalPdfPages]);
 
     // Load PDF.js library
     useEffect(() => {
@@ -223,7 +260,7 @@ const TinjauanPustaka = () => {
                 );
                 if (!res.ok) throw new Error("Failed to fetch chapters");
                 const data = await res.json();
-                // Expecting array of { id, chapter_number, chapter_title, content, content_type, pdf_path }
+                // Expecting array of { id, chapter_number, chapter_title, content, content_type, pdf_path, docx_path }
                 const sorted = Array.isArray(data)
                     ? [...data].sort((a, b) => {
                           const an = Number(a.chapter_number) || 0;
@@ -236,23 +273,42 @@ const TinjauanPustaka = () => {
                     setChapters(sorted);
                     setActiveChapterIndex(0);
 
-                    // Check if there's PDF content
-                    const pdfChapter = sorted.find(
-                        (ch) => ch.content_type === "pdf" && ch.pdf_path
-                    );
-                    if (pdfChapter) {
+                    // Kumpulkan semua PDF sesuai urutan backend (yang terbaru di bawah)
+                    const allPdfChapters = (Array.isArray(data) ? data : [])
+                        .filter(
+                            (ch) =>
+                                ch.content_type === "pdf" &&
+                                (ch.pdf_url || ch.pdf_path)
+                        )
+                        .map((ch) => ({
+                            id: ch.id,
+                            title: ch.chapter_title,
+                            url: ch.pdf_url || `/storage/${ch.pdf_path}`,
+                            path: ch.pdf_path,
+                        }));
+                    setPdfChapters(allPdfChapters);
+
+                    // Pilih PDF pertama sebagai default bila ada
+                    if (allPdfChapters.length > 0) {
+                        setActivePdfIndex(0);
+                        const first = allPdfChapters[0];
                         setPdfContent({
-                            url: `/storage/${pdfChapter.pdf_path}`,
-                            title: pdfChapter.chapter_title,
-                            path: pdfChapter.pdf_path,
+                            url: first.url,
+                            title: first.title,
+                            path: first.path,
                         });
                         setShowPdfViewer(true);
+                        setExpandedPdfIndex(0);
                     }
+
+                    // DOCX handling removed
                 }
             } catch (_) {
                 if (mounted) {
                     setChapters([]);
                     setActiveChapterIndex(0);
+                    setPdfChapters([]);
+                    setActivePdfIndex(0);
                 }
             }
         };
@@ -277,12 +333,26 @@ const TinjauanPustaka = () => {
 
     const goNext = () => {
         if (showPdfViewer && pdfContent) {
-            // Navigate PDF pages
-            setCurrentPdfPage((page) => Math.min(totalPdfPages, page + 1));
+            // Navigate PDF pages - gunakan total halaman PDF aktif
+            setCurrentPdfPage((page) => {
+                const total = activePdfTotalPages || totalPdfPages || page;
+                if (!total || page >= total) return page;
+                const next = page + 1;
+                return next > total ? total : next;
+            });
         } else {
             // Navigate chapters
             setActiveChapterIndex((idx) => Math.min(totalPages - 1, idx + 1));
         }
+        if (readerRef.current) {
+            readerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    };
+
+    // Prevent PDF reload when switching between chapters
+    const handleChapterClick = (idx) => {
+        setActiveChapterIndex(idx);
+        setShowPdfViewer(false); // Close PDF viewer when switching to other content
         if (readerRef.current) {
             readerRef.current.scrollTo({ top: 0, behavior: "smooth" });
         }
@@ -300,7 +370,7 @@ const TinjauanPustaka = () => {
         <div className="min-h-screen bg-[#F5F5F5]">
             <main className="relative">
                 {/* Sidebar kiri full height */}
-                <aside className="fixed top-0 left-0 bottom-0 w-64 bg-[#113939] text-white overflow-y-auto z-30">
+                <aside className="hidden md:block fixed top-0 left-0 bottom-0 w-64 bg-[#113939] text-white overflow-y-auto z-30">
                     <div className="p-4 border-b border-white/10">
                         <div className="flex items-start space-x-3">
                             <img
@@ -336,89 +406,108 @@ const TinjauanPustaka = () => {
                             <span>Daftar Isi</span>
                         </button>
 
-                        {pdfContent && (
-                            <button
-                                onClick={togglePdfViewer}
-                                className={`w-full px-4 py-3 hover:bg-white/10 border-b border-white/10 flex items-center text-left ${
-                                    showPdfViewer ? "bg-white/20" : ""
-                                }`}
+                        {/* Daftar semua PDF sebagai dropdown */}
+                        {pdfChapters.map((pdf, idx) => (
+                            <div
+                                key={pdf.id || idx}
+                                className="border-b border-white/10"
                             >
-                                <img
-                                    src="/images/FileText.svg"
-                                    alt="PDF"
-                                    className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 mr-2 flex-shrink-0"
-                                />
-                                <span>PDF Viewer</span>
-                            </button>
-                        )}
-                        {showPdfViewer && pdfContent ? (
-                            // PDF Pages in sidebar
-                            Array.from(
-                                { length: totalPdfPages },
-                                (_, i) => i + 1
-                            ).map((pageNum) => (
                                 <button
-                                    key={pageNum}
-                                    className={`w-full text-left px-4 py-3 border-b border-white/10 hover:bg-white/10 ${
-                                        pageNum === currentPdfPage
-                                            ? "bg-white/10"
+                                    onClick={() => {
+                                        // Toggle expand/collapse; aktifkan PDF bila berbeda
+                                        if (activePdfIndex === idx) {
+                                            setExpandedPdfIndex((cur) =>
+                                                cur === idx ? null : idx
+                                            );
+                                        } else {
+                                            setActivePdfIndex(idx);
+                                            setPdfContent({
+                                                url: pdf.url,
+                                                title: pdf.title,
+                                                path: pdf.path,
+                                            });
+                                            setCurrentPdfPage(1);
+                                            setTotalPdfPages(0);
+                                            setShowPdfViewer(true);
+                                            setExpandedPdfIndex(idx);
+                                        }
+                                    }}
+                                    className={`w-full px-4 py-3 hover:bg-white/10 flex items-center justify-between text-left ${
+                                        expandedPdfIndex === idx
+                                            ? "bg-white/20"
                                             : ""
                                     }`}
-                                    onClick={() => {
-                                        setCurrentPdfPage(pageNum);
-                                        if (readerRef.current)
-                                            readerRef.current.scrollTo({
-                                                top: 0,
-                                                behavior: "smooth",
-                                            });
-                                    }}
                                 >
-                                    Halaman {String(pageNum).padStart(2, "0")}
+                                    <div className="flex items-center">
+                                        <span>{pdf.title}</span>
+                                    </div>
+                                    <span
+                                        className={`transform transition-transform ${
+                                            expandedPdfIndex === idx
+                                                ? "rotate-180"
+                                                : ""
+                                        }`}
+                                    >
+                                        ▼
+                                    </span>
                                 </button>
-                            ))
-                        ) : (
-                            // Regular chapters
-                            <>
-                                {chapters.length === 0 && (
-                                    <div className="px-4 py-3 text-white/80 border-b border-white/10">
-                                        Belum ada konten.
+                                {expandedPdfIndex === idx && (
+                                    <div className="bg-white/5">
+                                        {Array.from(
+                                            {
+                                                length:
+                                                    activePdfTotalPages || 0,
+                                            },
+                                            (_, i) => i + 1
+                                        ).map((pageNum) => (
+                                            <button
+                                                key={pageNum}
+                                                className={`w-full text-left px-6 py-2 hover:bg-white/10 border-b border-white/5 flex items-center ${
+                                                    pageNum === currentPdfPage
+                                                        ? "bg-white/10"
+                                                        : ""
+                                                }`}
+                                                onClick={() => {
+                                                    setCurrentPdfPage(pageNum);
+                                                    if (readerRef.current)
+                                                        readerRef.current.scrollTo(
+                                                            {
+                                                                top: 0,
+                                                                behavior:
+                                                                    "smooth",
+                                                            }
+                                                        );
+                                                }}
+                                            >
+                                                <span className="text-xs opacity-70 mr-2">
+                                                    {String(pageNum).padStart(
+                                                        2,
+                                                        "0"
+                                                    )}
+                                                </span>
+                                                <span className="text-sm">
+                                                    Halaman {pageNum}
+                                                </span>
+                                            </button>
+                                        ))}
                                     </div>
                                 )}
-                                {chapters.map((ch, idx) => {
-                                    const labelNum = String(
-                                        Number(ch.chapter_number) || idx + 1
-                                    ).padStart(2, "0");
-                                    return (
-                                        <button
-                                            key={ch.id || idx}
-                                            className={`w-full text-left px-4 py-3 border-b border-white/10 hover:bg-white/10 ${
-                                                idx === activeChapterIndex
-                                                    ? "bg-white/10"
-                                                    : ""
-                                            }`}
-                                            onClick={() => {
-                                                setActiveChapterIndex(idx);
-                                                if (readerRef.current)
-                                                    readerRef.current.scrollTo({
-                                                        top: 0,
-                                                        behavior: "smooth",
-                                                    });
-                                            }}
-                                        >
-                                            {labelNum}{" "}
-                                            {ch.chapter_title || "Untitled"}
-                                        </button>
-                                    );
-                                })}
-                            </>
+                            </div>
+                        ))}
+
+                        {/* Tampilkan pesan jika tidak ada konten */}
+                        {chapters.length === 0 && pdfChapters.length === 0 && (
+                            <div className="px-4 py-3 text-white/80 border-b border-white/10">
+                                Belum ada konten.
+                            </div>
                         )}
                     </nav>
                 </aside>
 
                 {/* Area kanan */}
-                <section className="ml-64 min-h-screen flex flex-col relative">
+                <section className="md:ml-64 ml-0 min-h-screen flex flex-col relative">
                     {/* Header di kanan, full width area konten */}
-                    <div className="bg-[#EAD6A8] text-[#113939] top-0 w-full fixed toolbar-shadow">
+                    <div className="bg-[#EAD6A8] text-[#113939] top-0 left-0 md:left-64 w-full fixed z-20 toolbar-shadow">
                         <div className="flex items-center justify-between px-4 py-2">
                             <div className="flex items-center space-x-3">
                                 <button
@@ -427,10 +516,13 @@ const TinjauanPustaka = () => {
                                 >
                                     <span className="text-xl">&#x276E;</span>
                                 </button>
-                                <h1 className="font-semibold tracking-wide">
-                                    {chapters.length > 0
+                                <h1 className="font-semibold tracking-wide text-sm sm:text-base md:text-lg">
+                                    {showPdfViewer && pdfContent
+                                        ? pdfContent.title || "PDF VIEWER"
+                                        : chapters.length > 0
                                         ? chapters[activeChapterIndex]
-                                              ?.chapter_title || ""
+                                              ?.chapter_title ||
+                                          "TINJAUAN PUSTAKA"
                                         : "TINJAUAN PUSTAKA"}
                                 </h1>
                             </div>
@@ -442,7 +534,7 @@ const TinjauanPustaka = () => {
                         ref={readerRef}
                         className="w-full flex items-center justify-center mt-12"
                     >
-                        <div className="bg-white w-full md:w-[70%] lg:w-[45%] xl:w-[40%] min-h-[80vh] pb-16">
+                        <div className="bg-white w-full min-h-[70vh] pb-20 md:pb-16 md:w-[70%] lg:w-[55%] xl:w-[45%] 2xl:w-[40%]">
                             {/* Konten chapter aktif */}
                             {showPdfViewer && pdfContent ? (
                                 <div className="h-full">
@@ -453,6 +545,8 @@ const TinjauanPustaka = () => {
                                         totalPages={totalPdfPages}
                                         onPageChange={setCurrentPdfPage}
                                         onTotalPagesChange={setTotalPdfPages}
+                                        pdfCache={pdfCache}
+                                        onCacheUpdate={setPdfCache}
                                     />
                                 </div>
                             ) : chapters.length > 0 ? (
@@ -486,8 +580,8 @@ const TinjauanPustaka = () => {
                     </div>
 
                     {/* Toolbar bawah di kanan, full width area konten */}
-                    <div className="fixed bottom-0 left-64 right-0 bg-[#EAD6A8] toolbar-shadow">
-                        <div className="flex items-center px-4 py-1">
+                    <div className="fixed bottom-0 left-0 md:left-64 right-0 bg-[#EAD6A8] toolbar-shadow">
+                        <div className="flex items-center px-2 sm:px-4 py-1">
                             {/* cluster kiri: Sebelumnya */}
                             <div className="flex-1 flex items-center">
                                 <button
@@ -504,34 +598,34 @@ const TinjauanPustaka = () => {
                             </div>
 
                             {/* ikon tengah */}
-                            <div className="flex items-center justify-center space-x-8">
+                            <div className="flex items-center justify-center space-x-4 sm:space-x-8">
                                 <button
-                                    className="w-10 h-10 flex items-center justify-center hover:scale-110 transition"
+                                    className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center hover:scale-110 transition"
                                     title="Cari"
                                 >
                                     <img
                                         src="/images/Buttton_Search_Field.svg"
-                                        className="w-10 h-10"
+                                        className="w-9 h-9 sm:w-10 sm:h-10"
                                         alt="Search"
                                     />
                                 </button>
                                 <button
-                                    className="w-9 h-9 flex items-center justify-center hover:scale-110 transition"
+                                    className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center hover:scale-110 transition"
                                     title="Catatan"
                                 >
                                     <img
                                         src="/images/Icon Notes.svg"
-                                        className="w-7 h-7"
+                                        className="w-6 h-6 sm:w-7 sm:h-7"
                                         alt="Notes"
                                     />
                                 </button>
                                 <button
-                                    className="w-9 h-9 flex items-center justify-center hover:scale-110 transition"
+                                    className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center hover:scale-110 transition"
                                     title="Highlight"
                                 >
                                     <img
                                         src="/images/Icon Highlight.svg"
-                                        className="w-7 h-7"
+                                        className="w-6 h-6 sm:w-7 sm:h-7"
                                         alt="Highlight"
                                     />
                                 </button>
@@ -539,9 +633,6 @@ const TinjauanPustaka = () => {
 
                             {/* cluster kanan */}
                             <div className="flex-1 flex items-center justify-end space-x-3 text-[#113939]">
-                                <span className="text-sm font-semibold">
-                                    {pageLabel}
-                                </span>
                                 <button
                                     onClick={goNext}
                                     className="flex items-center space-x-2 px-3 py-0.5 rounded hover:bg-black/10"

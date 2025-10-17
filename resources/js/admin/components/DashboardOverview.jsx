@@ -96,7 +96,14 @@ const DashboardOverview = ({ onNavigate }) => {
 
     // Helper function to safely parse JSON
     const safeJsonParse = async (response) => {
-        if (!response.ok) return [];
+        if (!response.ok) {
+            console.warn(
+                "API request failed:",
+                response.status,
+                response.statusText
+            );
+            return [];
+        }
         const contentType = response.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
             console.warn("Response is not JSON:", contentType);
@@ -117,9 +124,24 @@ const DashboardOverview = ({ onNavigate }) => {
             // Fetch semua data secara parallel dengan error handling
             const [booksResponse, contentsResponse, usersResponse] =
                 await Promise.allSettled([
-                    fetch("/api/books").catch(() => ({ ok: false })),
-                    fetch("/api/book-contents").catch(() => ({ ok: false })),
-                    fetch("/api/users").catch(() => ({ ok: false })),
+                    fetch("/books", {
+                        headers: {
+                            Accept: "application/json",
+                            "Content-Type": "application/json",
+                        },
+                    }).catch(() => ({ ok: false })),
+                    fetch("/book-contents", {
+                        headers: {
+                            Accept: "application/json",
+                            "Content-Type": "application/json",
+                        },
+                    }).catch(() => ({ ok: false })),
+                    fetch("/users", {
+                        headers: {
+                            Accept: "application/json",
+                            "Content-Type": "application/json",
+                        },
+                    }).catch(() => ({ ok: false })),
                 ]);
 
             const books =
@@ -135,7 +157,14 @@ const DashboardOverview = ({ onNavigate }) => {
                     ? await safeJsonParse(usersResponse.value)
                     : [];
 
-            // Calculate statistics
+            // Log untuk debugging
+            console.log("Dashboard data fetched:", {
+                books: books.length,
+                contents: bookContents.length,
+                users: users.length,
+            });
+
+            // Calculate statistics dengan data yang lebih detail
             const stats = {
                 totalBooks: books.length,
                 totalContents: bookContents.length,
@@ -161,6 +190,29 @@ const DashboardOverview = ({ onNavigate }) => {
                 popularBooks: books
                     .sort((a, b) => (b.views || 0) - (a.views || 0))
                     .slice(0, 5),
+                // Statistik tambahan
+                totalPages: bookContents.reduce((sum, content) => {
+                    if (content.content_type === "pdf") return sum + 1; // PDF = 1 halaman
+                    return (
+                        sum +
+                        (content.content
+                            ? content.content.split("</p>").length
+                            : 0)
+                    ); // Estimasi halaman dari HTML
+                }, 0),
+                avgContentPerBook:
+                    books.length > 0
+                        ? Math.round(
+                              (bookContents.length / books.length) * 10
+                          ) / 10
+                        : 0,
+                contentTypeDistribution: {
+                    editor: bookContents.filter(
+                        (c) => c.content_type === "editor"
+                    ).length,
+                    pdf: bookContents.filter((c) => c.content_type === "pdf")
+                        .length,
+                },
             };
 
             setDashboardData({
@@ -200,13 +252,16 @@ const DashboardOverview = ({ onNavigate }) => {
                     recentBooks: [],
                     recentContents: [],
                     popularBooks: [],
+                    totalPages: 0,
+                    avgContentPerBook: 0,
+                    contentTypeDistribution: { editor: 0, pdf: 0 },
                 },
             });
 
             toast({
                 title: "Backend API Tidak Tersedia",
                 description:
-                    "Dashboard menggunakan data offline. Pastikan Laravel backend berjalan dan API routes tersedia di /api/books, /api/book-contents, /api/users",
+                    "Dashboard menggunakan data offline. Pastikan Laravel backend berjalan dan API routes tersedia di /books, /book-contents, /users",
                 status: "warning",
                 duration: 6000,
                 isClosable: true,

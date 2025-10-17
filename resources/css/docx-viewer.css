@@ -1,0 +1,139 @@
+.docx-viewer {
+    background: #f5f5f5;
+    padding: 20px;
+}
+
+.docx-viewer .docx-page {
+    margin: 0 auto;
+    padding: 40px 60px;
+    max-width: 800px; /* A4 width */
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Typography tuning */
+.docx-viewer .docx p {
+    margin: 0 0 16px 0;
+    line-height: 1.7;
+    color: #111827;
+    font-size: 14px;
+    text-align: justify;
+}
+
+.docx-viewer .docx h1,
+.docx-viewer .docx h2,
+.docx-viewer .docx h3,
+.docx-viewer .docx h4 {
+    color: #0f172a;
+    margin: 24px 0 16px 0;
+    font-weight: 600;
+}
+
+.docx-viewer .docx h1 { 
+    font-size: 24px; 
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 8px;
+}
+.docx-viewer .docx h2 { 
+    font-size: 20px; 
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 4px;
+}
+.docx-viewer .docx h3 { 
+    font-size: 18px; 
+}
+.docx-viewer .docx h4 { 
+    font-size: 16px; 
+}
+
+/* Lists */
+.docx-viewer .docx ul { 
+    padding-left: 20px; 
+    margin: 12px 0; 
+}
+.docx-viewer .docx ol { 
+    padding-left: 20px; 
+    margin: 12px 0; 
+}
+.docx-viewer .docx li {
+    margin: 4px 0;
+    line-height: 1.6;
+}
+
+/* Images fit page */
+.docx-viewer .docx img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    margin: 16px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Tables */
+.docx-viewer .docx table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    border: 1px solid #e5e7eb;
+}
+.docx-viewer .docx table td,
+.docx-viewer .docx table th {
+    border: 1px solid #e5e7eb;
+    padding: 8px 12px;
+    text-align: left;
+}
+.docx-viewer .docx table th {
+    background: #f9fafb;
+    font-weight: 600;
+}
+
+/* Alignment helpers */
+.docx-viewer .docx .text-center { text-align: center; }
+.docx-viewer .docx .text-right { text-align: right; }
+.docx-viewer .docx .text-left { text-align: left; }
+
+/* Blockquotes */
+.docx-viewer .docx blockquote {
+    border-left: 4px solid #3b82f6;
+    padding-left: 16px;
+    margin: 16px 0;
+    font-style: italic;
+    color: #6b7280;
+}
+
+/* Code blocks */
+.docx-viewer .docx pre {
+    background: #f3f4f6;
+    padding: 12px;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 16px 0;
+}
+
+.docx-viewer .docx code {
+    background: #f3f4f6;
+    padding: 2px 4px;
+    border-radius: 2px;
+    font-family: 'Courier New', monospace;
+}
+
+/* Prevent overflow clipping */
+.docx-viewer .docx * { 
+    box-sizing: border-box; 
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .docx-viewer .docx-page {
+        padding: 20px 30px;
+        margin: 10px;
+    }
+    
+    .docx-viewer .docx h1 { font-size: 20px; }
+    .docx-viewer .docx h2 { font-size: 18px; }
+    .docx-viewer .docx h3 { font-size: 16px; }
+    .docx-viewer .docx h4 { font-size: 14px; }
+}
+

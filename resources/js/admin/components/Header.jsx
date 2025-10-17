@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -39,7 +39,8 @@ import {
 
 const Header = ({ title, breadcrumbs, onLogout, sidebarWidth }) => {
     const [searchValue, setSearchValue] = useState("");
-    const [notifications] = useState(3); // Mock notification count
+    const [notifications, setNotifications] = useState(0);
+    const [notificationItems, setNotificationItems] = useState([]);
     const { colorMode, toggleColorMode } = useColorMode();
 
     const bgColor = useColorModeValue("white", "gray.800");
@@ -86,6 +87,33 @@ const Header = ({ title, breadcrumbs, onLogout, sidebarWidth }) => {
             },
         },
     };
+
+    // Fetch notifications periodically
+    useEffect(() => {
+        let aborted = false;
+        const fetchNotifs = async () => {
+            try {
+                const res = await fetch("/notifications?limit=10");
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!aborted) {
+                    setNotifications(data?.count || 0);
+                    setNotificationItems(
+                        Array.isArray(data?.items) ? data.items : []
+                    );
+                }
+            } catch (_) {
+                // ignore
+            }
+        };
+
+        fetchNotifs();
+        const id = setInterval(fetchNotifs, 15000);
+        return () => {
+            aborted = true;
+            clearInterval(id);
+        };
+    }, []);
 
     return (
         <motion.div
@@ -255,52 +283,112 @@ const Header = ({ title, breadcrumbs, onLogout, sidebarWidth }) => {
                             animate={{ x: 0, opacity: 1 }}
                             transition={{ delay: 0.45, duration: 0.3 }}
                         >
-                            <Box position="relative">
-                                <motion.div
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
-                                >
-                                    <IconButton
-                                        icon={<Bell size={20} />}
-                                        variant="ghost"
-                                        size="md"
-                                        color={textColor}
-                                        _hover={{
-                                            bg: useColorModeValue(
-                                                "gray.100",
-                                                "gray.700"
-                                            ),
-                                        }}
-                                        borderRadius="xl"
-                                    />
-                                </motion.div>
-
-                                {notifications > 0 && (
+                            <Menu placement="bottom-end">
+                                <MenuButton as={Box} position="relative">
                                     <motion.div
-                                        variants={notificationVariants}
-                                        initial="initial"
-                                        animate="pulse"
-                                        style={{
-                                            position: "absolute",
-                                            top: -2,
-                                            right: -2,
-                                        }}
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.9 }}
                                     >
-                                        <Badge
-                                            colorScheme="red"
-                                            borderRadius="full"
-                                            fontSize="xs"
-                                            minW="20px"
-                                            h="20px"
-                                            display="flex"
-                                            alignItems="center"
-                                            justifyContent="center"
-                                        >
-                                            {notifications}
-                                        </Badge>
+                                        <IconButton
+                                            icon={<Bell size={20} />}
+                                            variant="ghost"
+                                            size="md"
+                                            color={textColor}
+                                            _hover={{
+                                                bg: useColorModeValue(
+                                                    "gray.100",
+                                                    "gray.700"
+                                                ),
+                                            }}
+                                            borderRadius="xl"
+                                        />
                                     </motion.div>
-                                )}
-                            </Box>
+                                    {notifications > 0 && (
+                                        <motion.div
+                                            variants={notificationVariants}
+                                            initial="initial"
+                                            animate="pulse"
+                                            style={{
+                                                position: "absolute",
+                                                top: -2,
+                                                right: -2,
+                                            }}
+                                        >
+                                            <Badge
+                                                colorScheme="red"
+                                                borderRadius="full"
+                                                fontSize="xs"
+                                                minW="20px"
+                                                h="20px"
+                                                display="flex"
+                                                alignItems="center"
+                                                justifyContent="center"
+                                            >
+                                                {notifications}
+                                            </Badge>
+                                        </motion.div>
+                                    )}
+                                </MenuButton>
+                                <MenuList maxW="320px" p={0} overflow="hidden">
+                                    <Box
+                                        px={4}
+                                        py={2}
+                                        borderBottom="1px"
+                                        borderColor={borderColor}
+                                    >
+                                        <Text
+                                            fontSize="sm"
+                                            fontWeight="semibold"
+                                        >
+                                            Notifikasi Terbaru
+                                        </Text>
+                                        <Text fontSize="xs" color="gray.500">
+                                            {notifications} aktivitas terakhir
+                                        </Text>
+                                    </Box>
+                                    {notificationItems.length === 0 ? (
+                                        <Box px={4} py={3}>
+                                            <Text
+                                                fontSize="sm"
+                                                color="gray.500"
+                                            >
+                                                Tidak ada notifikasi
+                                            </Text>
+                                        </Box>
+                                    ) : (
+                                        notificationItems.map((n) => (
+                                            <MenuItem
+                                                key={n.id}
+                                                _hover={{
+                                                    bg: useColorModeValue(
+                                                        "gray.50",
+                                                        "gray.700"
+                                                    ),
+                                                }}
+                                            >
+                                                <VStack
+                                                    align="start"
+                                                    spacing={0}
+                                                >
+                                                    <Text
+                                                        fontSize="sm"
+                                                        fontWeight="medium"
+                                                    >
+                                                        {n.title ||
+                                                            "Konten baru"}
+                                                    </Text>
+                                                    <Text
+                                                        fontSize="xs"
+                                                        color="gray.500"
+                                                    >
+                                                        {n.bookTitle || "Buku"}
+                                                    </Text>
+                                                </VStack>
+                                            </MenuItem>
+                                        ))
+                                    )}
+                                </MenuList>
+                            </Menu>
                         </motion.div>
 
                         {/* Profile Menu */}

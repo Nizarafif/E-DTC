@@ -1,370 +1,343 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { motion } from "framer-motion";
 import {
     Box,
     VStack,
     HStack,
     Text,
-    Button,
-    useColorModeValue,
+    SimpleGrid,
+    Stat,
+    StatLabel,
+    StatNumber,
+    StatHelpText,
+    StatArrow,
+    Card,
+    CardBody,
+    CardHeader,
     Progress,
-    CircularProgress,
-    CircularProgressLabel,
     Badge,
-    IconButton,
-    Tooltip,
     Flex,
-    Spacer,
-    Divider,
+    Icon,
+    useColorModeValue,
+    Tooltip,
 } from "@chakra-ui/react";
 import {
-    TrendingUp,
-    TrendingDown,
-    Activity,
-    RefreshCw,
-    Eye,
     BookOpen,
     FileText,
+    Users,
+    TrendingUp,
     Download,
     Edit3,
+    BarChart3,
+    PieChart,
+    Activity,
+    Clock,
 } from "lucide-react";
 
 const RealtimeStats = ({ data, isLoading, onRefresh }) => {
-    const [animationKey, setAnimationKey] = useState(0);
-
     const bgColor = useColorModeValue("white", "gray.800");
     const borderColor = useColorModeValue("gray.200", "gray.600");
     const textColor = useColorModeValue("gray.700", "gray.200");
+    const cardBg = useColorModeValue("gray.50", "gray.700");
 
-    // Trigger animation saat data berubah
-    useEffect(() => {
-        setAnimationKey((prev) => prev + 1);
-    }, [data]);
+    const stats = data?.stats || {};
+    const books = data?.books || [];
+    const bookContents = data?.bookContents || [];
 
-    const stats = [
-        {
-            label: "Total Buku",
-            value: data?.stats?.totalBooks || 0,
-            icon: BookOpen,
-            color: "blue",
-            trend: "+12%",
-            trendType: "increase",
-        },
-        {
-            label: "Total Konten",
-            value: data?.stats?.totalContents || 0,
-            icon: FileText,
-            color: "purple",
-            trend: "+8%",
-            trendType: "increase",
-        },
-        {
-            label: "Editor Content",
-            value: data?.stats?.editorContents || 0,
-            icon: Edit3,
-            color: "green",
-            trend: "+15%",
-            trendType: "increase",
-        },
-        {
-            label: "PDF Content",
-            value: data?.stats?.pdfContents || 0,
-            icon: Download,
-            color: "red",
-            trend: "+5%",
-            trendType: "increase",
-        },
-    ];
+    // Hitung persentase distribusi konten
+    const totalContent = stats.totalContents || 1;
+    const editorPercent = Math.round(
+        (stats.editorContents / totalContent) * 100
+    );
+    const pdfPercent = Math.round((stats.pdfContents / totalContent) * 100);
 
-    const StatCard = ({ stat, index }) => (
+    // Statistik dengan animasi
+    const StatCard = ({
+        title,
+        value,
+        icon,
+        color,
+        trend,
+        subtitle,
+        tooltip,
+    }) => (
         <motion.div
-            key={`${stat.label}-${animationKey}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1, duration: 0.3 }}
+            transition={{ duration: 0.3 }}
+            whileHover={{ scale: 1.02 }}
         >
-            <Box
-                p={4}
-                bg={useColorModeValue(`${stat.color}.50`, `${stat.color}.900`)}
-                borderRadius="xl"
+            <Card
+                bg={bgColor}
                 border="1px"
-                borderColor={useColorModeValue(
-                    `${stat.color}.200`,
-                    `${stat.color}.700`
-                )}
-                _hover={{
-                    shadow: "lg",
-                    transform: "translateY(-2px)",
-                }}
-                transition="all 0.2s"
+                borderColor={borderColor}
+                shadow="sm"
             >
-                <VStack spacing={3} align="stretch">
-                    <HStack justify="space-between" align="start">
+                <CardBody p={4}>
+                    <Flex align="center" justify="space-between">
                         <VStack align="start" spacing={1}>
+                            <HStack spacing={2}>
                             <Text
-                                fontSize="xs"
-                                fontWeight="bold"
-                                color={`${stat.color}.600`}
-                                textTransform="uppercase"
-                                letterSpacing="wide"
-                            >
-                                {stat.label}
-                            </Text>
-                            <motion.div
-                                key={stat.value}
-                                initial={{ scale: 1.2 }}
-                                animate={{ scale: 1 }}
-                                transition={{ duration: 0.3 }}
-                            >
-                                <Text
-                                    fontSize="3xl"
-                                    fontWeight="bold"
-                                    color={`${stat.color}.600`}
+                                    fontSize="sm"
+                                    color="gray.500"
+                                    fontWeight="medium"
                                 >
-                                    {stat.value}
+                                    {title}
+                            </Text>
+                                {tooltip && (
+                                    <Tooltip label={tooltip} fontSize="sm">
+                                        <Icon
+                                            as={Activity}
+                                            boxSize={3}
+                                            color="gray.400"
+                                        />
+                                    </Tooltip>
+                                )}
+                            </HStack>
+                                <Text
+                                fontSize="2xl"
+                                    fontWeight="bold"
+                                color={textColor}
+                            >
+                                {isLoading ? "..." : value}
+                            </Text>
+                            {subtitle && (
+                                <Text fontSize="xs" color="gray.500">
+                                    {subtitle}
                                 </Text>
-                            </motion.div>
-                        </VStack>
-                        <Box
-                            p={2}
-                            bg={`${stat.color}.100`}
-                            borderRadius="lg"
-                            color={`${stat.color}.600`}
-                        >
-                            <stat.icon size={20} />
-                        </Box>
-                    </HStack>
-
-                    <HStack spacing={2}>
-                        <Badge
-                            colorScheme={
-                                stat.trendType === "increase" ? "green" : "red"
-                            }
-                            variant="subtle"
-                            fontSize="xs"
-                        >
-                            {stat.trendType === "increase" ? (
-                                <TrendingUp size={12} />
-                            ) : (
-                                <TrendingDown size={12} />
                             )}
-                            {stat.trend}
-                        </Badge>
-                        <Text fontSize="xs" color="gray.500">
-                            vs bulan lalu
+                            {trend && (
+                                <HStack spacing={1}>
+                                    <StatArrow
+                                        type={
+                                            trend > 0 ? "increase" : "decrease"
+                                        }
+                                    />
+                                    <Text
+                            fontSize="xs"
+                                        color={
+                                            trend > 0 ? "green.500" : "red.500"
+                                        }
+                                    >
+                                        {Math.abs(trend)}%
                         </Text>
                     </HStack>
+                            )}
                 </VStack>
+                        <Box
+                            p={3}
+                            bg={`${color}.100`}
+                            borderRadius="xl"
+                            color={`${color}.600`}
+                        >
+                            {icon}
             </Box>
+                    </Flex>
+                </CardBody>
+            </Card>
         </motion.div>
     );
 
-    return (
-        <Box
+    // Progress bar untuk distribusi konten
+    const ContentDistributionCard = () => (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+        >
+            <Card
             bg={bgColor}
-            p={6}
-            borderRadius="2xl"
             border="1px"
             borderColor={borderColor}
             shadow="sm"
         >
-            <VStack spacing={6} align="stretch">
-                {/* Header */}
-                <Flex align="center" justify="space-between">
-                    <HStack spacing={3}>
+                <CardHeader pb={2}>
+                    <HStack spacing={2}>
                         <Box
                             p={2}
-                            bg="blue.100"
+                            bg="purple.100"
                             borderRadius="lg"
-                            color="blue.600"
+                            color="purple.600"
                         >
-                            <Activity size={16} />
+                            <PieChart size={16} />
                         </Box>
-                        <VStack align="start" spacing={0}>
-                            <Text
-                                fontSize="lg"
-                                fontWeight="bold"
-                                color={textColor}
-                            >
-                                Statistik Real-time
+                        <Text fontSize="lg" fontWeight="bold" color={textColor}>
+                            Distribusi Konten
                             </Text>
-                            <Text fontSize="sm" color="gray.500">
-                                Update otomatis setiap 30 detik
-                            </Text>
-                        </VStack>
                     </HStack>
-
+                </CardHeader>
+                <CardBody pt={0}>
+                    <VStack spacing={4} align="stretch">
+                        <Box>
+                            <Flex justify="space-between" mb={1}>
                     <HStack spacing={2}>
-                        <Tooltip label="Refresh Manual">
-                            <IconButton
-                                size="sm"
-                                variant="outline"
+                                    <Icon
+                                        as={Edit3}
+                                        boxSize={3}
+                                        color="blue.500"
+                                    />
+                                    <Text fontSize="sm" fontWeight="medium">
+                                        Editor
+                                    </Text>
+                                </HStack>
+                                <Text fontSize="sm" fontWeight="bold">
+                                    {stats.editorContents}
+                                </Text>
+                            </Flex>
+                                <Progress
+                                value={editorPercent}
                                 colorScheme="blue"
-                                icon={<RefreshCw size={14} />}
-                                onClick={onRefresh}
-                                isLoading={isLoading}
+                                size="sm"
+                                borderRadius="md"
                             />
-                        </Tooltip>
-                    </HStack>
-                </Flex>
-
-                {/* Stats Grid */}
-                <Box>
-                    <VStack spacing={4} align="stretch">
-                        {stats.map((stat, index) => (
-                            <StatCard
-                                key={stat.label}
-                                stat={stat}
-                                index={index}
-                            />
-                        ))}
-                    </VStack>
-                </Box>
-
-                {/* Progress Indicators */}
-                <Box>
-                    <VStack spacing={4} align="stretch">
-                        <Text fontSize="sm" fontWeight="bold" color={textColor}>
-                            Progress Konten
-                        </Text>
-
-                        <VStack spacing={3} align="stretch">
-                            {/* Editor vs PDF Ratio */}
-                            <Box>
-                                <HStack justify="space-between" mb={2}>
-                                    <Text fontSize="sm" color="gray.600">
-                                        Editor Content
-                                    </Text>
-                                    <Text
-                                        fontSize="sm"
-                                        fontWeight="bold"
-                                        color="green.600"
-                                    >
-                                        {data?.stats?.editorContents || 0}
-                                    </Text>
-                                </HStack>
-                                <Progress
-                                    value={
-                                        data?.stats?.totalContents > 0
-                                            ? (data.stats.editorContents /
-                                                  data.stats.totalContents) *
-                                              100
-                                            : 0
-                                    }
-                                    colorScheme="green"
-                                    borderRadius="full"
-                                    height="8px"
-                                />
+                            <Text fontSize="xs" color="gray.500" mt={1}>
+                                {editorPercent}%
+                            </Text>
                             </Box>
 
                             <Box>
-                                <HStack justify="space-between" mb={2}>
-                                    <Text fontSize="sm" color="gray.600">
-                                        PDF Content
-                                    </Text>
-                                    <Text
-                                        fontSize="sm"
-                                        fontWeight="bold"
-                                        color="red.600"
-                                    >
-                                        {data?.stats?.pdfContents || 0}
+                            <Flex justify="space-between" mb={1}>
+                                <HStack spacing={2}>
+                                    <Icon
+                                        as={Download}
+                                        boxSize={3}
+                                        color="red.500"
+                                    />
+                                    <Text fontSize="sm" fontWeight="medium">
+                                        PDF
                                     </Text>
                                 </HStack>
+                                <Text fontSize="sm" fontWeight="bold">
+                                    {stats.pdfContents}
+                                </Text>
+                            </Flex>
                                 <Progress
-                                    value={
-                                        data?.stats?.totalContents > 0
-                                            ? (data.stats.pdfContents /
-                                                  data.stats.totalContents) *
-                                              100
-                                            : 0
-                                    }
+                                value={pdfPercent}
                                     colorScheme="red"
-                                    borderRadius="full"
-                                    height="8px"
+                                size="sm"
+                                borderRadius="md"
                                 />
+                            <Text fontSize="xs" color="gray.500" mt={1}>
+                                {pdfPercent}%
+                            </Text>
                             </Box>
                         </VStack>
-                    </VStack>
-                </Box>
+                </CardBody>
+            </Card>
+        </motion.div>
+    );
 
-                {/* Circular Progress */}
-                <Box>
-                    <HStack justify="center" spacing={8}>
-                        <VStack spacing={2}>
-                            <CircularProgress
-                                value={
-                                    data?.stats?.totalContents > 0
-                                        ? (data.stats.editorContents /
-                                              data.stats.totalContents) *
-                                          100
-                                        : 0
-                                }
-                                color="green.500"
-                                size="80px"
-                                thickness="8px"
-                            >
-                                <CircularProgressLabel
-                                    fontSize="sm"
-                                    fontWeight="bold"
-                                >
-                                    {data?.stats?.totalContents > 0
-                                        ? Math.round(
-                                              (data.stats.editorContents /
-                                                  data.stats.totalContents) *
-                                                  100
-                                          )
-                                        : 0}
-                                    %
-                                </CircularProgressLabel>
-                            </CircularProgress>
-                            <Text
-                                fontSize="xs"
-                                color="green.600"
-                                fontWeight="bold"
-                            >
-                                Editor
-                            </Text>
-                        </VStack>
-
-                        <VStack spacing={2}>
-                            <CircularProgress
-                                value={
-                                    data?.stats?.totalContents > 0
-                                        ? (data.stats.pdfContents /
-                                              data.stats.totalContents) *
-                                          100
-                                        : 0
-                                }
-                                color="red.500"
-                                size="80px"
-                                thickness="8px"
-                            >
-                                <CircularProgressLabel
-                                    fontSize="sm"
-                                    fontWeight="bold"
-                                >
-                                    {data?.stats?.totalContents > 0
-                                        ? Math.round(
-                                              (data.stats.pdfContents /
-                                                  data.stats.totalContents) *
-                                                  100
-                                          )
-                                        : 0}
-                                    %
-                                </CircularProgressLabel>
-                            </CircularProgress>
-                            <Text
-                                fontSize="xs"
-                                color="red.600"
-                                fontWeight="bold"
-                            >
-                                PDF
-                            </Text>
-                        </VStack>
+    // Card untuk statistik tambahan
+    const AdditionalStatsCard = () => (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+        >
+            <Card
+                bg={bgColor}
+                border="1px"
+                borderColor={borderColor}
+                shadow="sm"
+            >
+                <CardHeader pb={2}>
+                    <HStack spacing={2}>
+                        <Box
+                            p={2}
+                            bg="orange.100"
+                            borderRadius="lg"
+                            color="orange.600"
+                        >
+                            <BarChart3 size={16} />
+                        </Box>
+                        <Text fontSize="lg" fontWeight="bold" color={textColor}>
+                            Statistik Tambahan
+                        </Text>
                     </HStack>
-                </Box>
+                </CardHeader>
+                <CardBody pt={0}>
+                    <VStack spacing={3} align="stretch">
+                        <Flex justify="space-between" align="center">
+                            <Text fontSize="sm" color="gray.600">
+                                Total Halaman
+                            </Text>
+                            <Badge colorScheme="blue" fontSize="sm">
+                                {stats.totalPages || 0}
+                            </Badge>
+                        </Flex>
+                        <Flex justify="space-between" align="center">
+                            <Text fontSize="sm" color="gray.600">
+                                Rata-rata Konten/Buku
+                            </Text>
+                            <Badge colorScheme="green" fontSize="sm">
+                                {stats.avgContentPerBook || 0}
+                            </Badge>
+                        </Flex>
+                        <Flex justify="space-between" align="center">
+                            <Text fontSize="sm" color="gray.600">
+                                Buku dengan Konten
+                            </Text>
+                            <Badge colorScheme="purple" fontSize="sm">
+                                {
+                                    books.filter((book) =>
+                                        bookContents.some(
+                                            (content) =>
+                                                content.book_id === book.id
+                                        )
+                                    ).length
+                                }
+                            </Badge>
+                        </Flex>
+                        </VStack>
+                </CardBody>
+            </Card>
+        </motion.div>
+    );
+
+    return (
+        <VStack spacing={6} align="stretch">
+            {/* Statistik Utama */}
+            <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4}>
+                <StatCard
+                    title="Total Buku"
+                    value={stats.totalBooks || 0}
+                    icon={<BookOpen size={20} />}
+                    color="blue"
+                    subtitle="Buku terdaftar"
+                    tooltip="Jumlah total buku dalam sistem"
+                />
+                <StatCard
+                    title="Total Konten"
+                    value={stats.totalContents || 0}
+                    icon={<FileText size={20} />}
+                    color="green"
+                    subtitle="Chapter & dokumen"
+                    tooltip="Jumlah total konten (editor, PDF)"
+                />
+                <StatCard
+                    title="Pengguna"
+                    value={stats.totalUsers || 0}
+                    icon={<Users size={20} />}
+                    color="purple"
+                    subtitle="User terdaftar"
+                    tooltip="Jumlah pengguna sistem"
+                />
+                <StatCard
+                    title="PDF Upload"
+                    value={stats.pdfContents || 0}
+                    icon={<Download size={20} />}
+                    color="red"
+                    subtitle="File PDF"
+                    tooltip="Jumlah file PDF yang diupload"
+                />
+            </SimpleGrid>
+
+            {/* Statistik Detail */}
+            <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
+                <ContentDistributionCard />
+                <AdditionalStatsCard />
+            </SimpleGrid>
             </VStack>
-        </Box>
     );
 };
 

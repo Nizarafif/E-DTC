@@ -5,29 +5,27 @@ import {
     VStack,
     HStack,
     Text,
-    Button,
-    useColorModeValue,
+    Card,
+    CardBody,
+    CardHeader,
     Badge,
-    IconButton,
-    Tooltip,
     Avatar,
-    AvatarGroup,
     Flex,
     Spacer,
+    Button,
+    useColorModeValue,
+    Tooltip,
     Divider,
-    SimpleGrid,
 } from "@chakra-ui/react";
 import {
     BookOpen,
     FileText,
     Download,
     Edit3,
-    Eye,
     Calendar,
     Clock,
-    User,
+    Eye,
     Plus,
-    Trash2,
     Activity,
 } from "lucide-react";
 
@@ -35,7 +33,11 @@ const RecentActivity = ({ data, onNavigate }) => {
     const bgColor = useColorModeValue("white", "gray.800");
     const borderColor = useColorModeValue("gray.200", "gray.600");
     const textColor = useColorModeValue("gray.700", "gray.200");
-    const cardBg = useColorModeValue("gray.50", "gray.700");
+    const dividerColor = useColorModeValue("gray.100", "gray.700");
+
+    const stats = data?.stats || {};
+    const books = data?.books || [];
+    const bookContents = data?.bookContents || [];
 
     const formatTimeAgo = (dateString) => {
         if (!dateString) return "-";
@@ -51,331 +53,195 @@ const RecentActivity = ({ data, onNavigate }) => {
         return `${Math.floor(diffInSeconds / 86400)} hari yang lalu`;
     };
 
-    const formatDate = (dateString) => {
-        if (!dateString) return "-";
-        return new Date(dateString).toLocaleDateString("id-ID", {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-    };
-
     const getBookTitle = (bookId) => {
-        const book = data?.books?.find((b) => b.id === bookId);
+        const book = books.find((b) => b.id === bookId);
         return book ? book.title : "Buku Tidak Ditemukan";
     };
 
-    const getActivityIcon = (type) => {
-        switch (type) {
-            case "book_created":
-                return <BookOpen size={14} />;
-            case "content_created":
-                return <FileText size={14} />;
-            case "content_updated":
-                return <Edit3 size={14} />;
-            case "content_deleted":
-                return <Trash2 size={14} />;
+    const getContentTypeIcon = (contentType) => {
+        switch (contentType) {
+            case "pdf":
+                return <Download size={14} />;
             default:
-                return <Activity size={14} />;
+                return <Edit3 size={14} />;
         }
     };
 
-    const getActivityColor = (type) => {
-        switch (type) {
-            case "book_created":
-                return "blue";
-            case "content_created":
-                return "green";
-            case "content_updated":
-                return "orange";
-            case "content_deleted":
+    const getContentTypeColor = (contentType) => {
+        switch (contentType) {
+            case "pdf":
                 return "red";
             default:
-                return "gray";
+                return "blue";
         }
     };
 
-    const getActivityText = (type, data) => {
-        switch (type) {
-            case "book_created":
-                return `Buku "${data.title}" ditambahkan`;
-            case "content_created":
-                return `Konten "${
-                    data.chapter_title || "Untitled"
-                }" ditambahkan`;
-            case "content_updated":
-                return `Konten "${
-                    data.chapter_title || "Untitled"
-                }" diperbarui`;
-            case "content_deleted":
-                return `Konten "${data.chapter_title || "Untitled"}" dihapus`;
+    const getContentTypeLabel = (contentType) => {
+        switch (contentType) {
+            case "pdf":
+                return "PDF";
             default:
-                return "Aktivitas tidak diketahui";
+                return "Editor";
         }
     };
 
-    // Simulasi aktivitas terbaru (dalam implementasi nyata, ini akan datang dari backend)
+    // Gabungkan aktivitas terbaru dari buku dan konten
     const recentActivities = [
-        ...(data?.stats?.recentBooks?.slice(0, 3).map((book) => ({
+        ...(stats.recentBooks?.map((book) => ({
             id: `book-${book.id}`,
-            type: "book_created",
-            data: book,
-            timestamp: book.created_at,
+            type: "book",
+            title: book.title,
+            subtitle: `Buku baru ditambahkan`,
+            time: book.created_at,
+            icon: <BookOpen size={16} />,
+            color: "blue",
         })) || []),
-        ...(data?.stats?.recentContents?.slice(0, 3).map((content) => ({
+        ...(stats.recentContents?.map((content) => ({
             id: `content-${content.id}`,
-            type: "content_created",
-            data: content,
-            timestamp: content.created_at,
+            type: "content",
+            title: content.chapter_title || "Konten Baru",
+            subtitle: `${getContentTypeLabel(
+                content.content_type
+            )} - ${getBookTitle(content.book_id)}`,
+            time: content.created_at,
+            icon: getContentTypeIcon(content.content_type),
+            color: getContentTypeColor(content.content_type),
         })) || []),
     ]
-        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-        .slice(0, 6);
+        .sort((a, b) => new Date(b.time) - new Date(a.time))
+        .slice(0, 8);
+
+    const ActivityItem = ({ activity }) => (
+        <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3 }}
+            whileHover={{ x: 5 }}
+        >
+            <HStack
+                spacing={3}
+                p={3}
+                borderRadius="lg"
+                _hover={{ bg: useColorModeValue("gray.50", "gray.700") }}
+            >
+                <Avatar
+                    size="sm"
+                    bg={`${activity.color}.100`}
+                    color={`${activity.color}.600`}
+                    icon={activity.icon}
+                />
+                <VStack align="start" spacing={0} flex={1}>
+                    <Text
+                        fontSize="sm"
+                        fontWeight="medium"
+                        color={textColor}
+                        noOfLines={1}
+                    >
+                        {activity.title}
+                    </Text>
+                    <Text fontSize="xs" color="gray.500" noOfLines={1}>
+                        {activity.subtitle}
+                    </Text>
+                </VStack>
+                <VStack align="end" spacing={0}>
+                    <Text fontSize="xs" color="gray.400">
+                        {formatTimeAgo(activity.time)}
+                    </Text>
+                    <Badge
+                        size="sm"
+                        colorScheme={activity.color}
+                        variant="subtle"
+                    >
+                        {activity.type === "book" ? "Buku" : "Konten"}
+                    </Badge>
+                </VStack>
+            </HStack>
+        </motion.div>
+    );
 
     return (
-        <Box
-            bg={bgColor}
-            p={6}
-            borderRadius="2xl"
-            border="1px"
-            borderColor={borderColor}
-            shadow="sm"
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
         >
-            <VStack spacing={6} align="stretch">
-                {/* Header */}
-                <Flex align="center" justify="space-between">
-                    <HStack spacing={3}>
-                        <Box
-                            p={2}
-                            bg="purple.100"
-                            borderRadius="lg"
-                            color="purple.600"
-                        >
-                            <Clock size={16} />
-                        </Box>
-                        <VStack align="start" spacing={0}>
-                            <Text
-                                fontSize="lg"
-                                fontWeight="bold"
-                                color={textColor}
+            <Card
+                bg={bgColor}
+                border="1px"
+                borderColor={borderColor}
+                shadow="sm"
+            >
+                <CardHeader>
+                    <Flex align="center" justify="space-between">
+                        <HStack spacing={3}>
+                            <Box
+                                p={2}
+                                bg="teal.100"
+                                borderRadius="lg"
+                                color="teal.600"
                             >
-                                Aktivitas Terbaru
-                            </Text>
-                            <Text fontSize="sm" color="gray.500">
-                                Update real-time dari sistem
-                            </Text>
-                        </VStack>
-                    </HStack>
-
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onNavigate && onNavigate("books")}
-                    >
-                        Lihat Semua
-                    </Button>
-                </Flex>
-
-                {/* Activity List */}
-                <VStack spacing={3} align="stretch">
-                    {recentActivities.length > 0 ? (
-                        recentActivities.map((activity, index) => (
-                            <motion.div
-                                key={activity.id}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: index * 0.1 }}
-                            >
-                                <Box
-                                    p={4}
-                                    bg={cardBg}
-                                    borderRadius="lg"
-                                    border="1px"
-                                    borderColor={borderColor}
-                                    _hover={{
-                                        shadow: "md",
-                                        borderColor: `${getActivityColor(
-                                            activity.type
-                                        )}.300`,
-                                    }}
-                                    transition="all 0.2s"
+                                <Activity size={16} />
+                            </Box>
+                            <VStack align="start" spacing={0}>
+                                <Text
+                                    fontSize="lg"
+                                    fontWeight="bold"
+                                    color={textColor}
                                 >
-                                    <HStack
-                                        justify="space-between"
-                                        align="start"
-                                    >
-                                        <HStack spacing={3} flex={1}>
-                                            <Box
-                                                p={2}
-                                                bg={`${getActivityColor(
-                                                    activity.type
-                                                )}.100`}
-                                                borderRadius="lg"
-                                                color={`${getActivityColor(
-                                                    activity.type
-                                                )}.600`}
-                                            >
-                                                {getActivityIcon(activity.type)}
-                                            </Box>
-
-                                            <VStack
-                                                align="start"
-                                                spacing={1}
-                                                flex={1}
-                                            >
-                                                <Text
-                                                    fontSize="sm"
-                                                    fontWeight="bold"
-                                                    color={textColor}
-                                                    noOfLines={1}
-                                                >
-                                                    {getActivityText(
-                                                        activity.type,
-                                                        activity.data
-                                                    )}
-                                                </Text>
-
-                                                <HStack
-                                                    spacing={2}
-                                                    fontSize="xs"
-                                                    color="gray.500"
-                                                >
-                                                    <HStack spacing={1}>
-                                                        <Clock size={10} />
-                                                        <Text>
-                                                            {formatTimeAgo(
-                                                                activity.timestamp
-                                                            )}
-                                                        </Text>
-                                                    </HStack>
-                                                    <HStack spacing={1}>
-                                                        <Calendar size={10} />
-                                                        <Text>
-                                                            {formatDate(
-                                                                activity.timestamp
-                                                            )}
-                                                        </Text>
-                                                    </HStack>
-                                                </HStack>
-
-                                                {activity.type ===
-                                                    "content_created" && (
-                                                    <Text
-                                                        fontSize="xs"
-                                                        color="gray.400"
-                                                        noOfLines={1}
-                                                    >
-                                                        Buku:{" "}
-                                                        {getBookTitle(
-                                                            activity.data
-                                                                .book_id
-                                                        )}
-                                                    </Text>
-                                                )}
-                                            </VStack>
-                                        </HStack>
-
-                                        <HStack spacing={1}>
-                                            <Badge
-                                                colorScheme={getActivityColor(
-                                                    activity.type
-                                                )}
-                                                variant="subtle"
-                                                fontSize="xs"
-                                            >
-                                                {activity.type ===
-                                                "book_created"
-                                                    ? "Buku"
-                                                    : "Konten"}
-                                            </Badge>
-                                        </HStack>
-                                    </HStack>
-                                </Box>
-                            </motion.div>
-                        ))
-                    ) : (
-                        <Box p={8} textAlign="center" color="gray.500">
-                            <VStack spacing={3}>
-                                <Box
-                                    p={4}
-                                    bg="gray.100"
-                                    borderRadius="full"
-                                    color="gray.400"
-                                >
-                                    <Clock size={24} />
-                                </Box>
-                                <VStack spacing={1}>
-                                    <Text fontSize="sm" fontWeight="bold">
-                                        Belum ada aktivitas
-                                    </Text>
-                                    <Text fontSize="xs">
-                                        Aktivitas akan muncul di sini saat ada
-                                        perubahan
-                                    </Text>
-                                </VStack>
+                                    Aktivitas Terbaru
+                                </Text>
+                                <Text fontSize="sm" color="gray.500">
+                                    Update real-time dari sistem
+                                </Text>
                             </VStack>
+                        </HStack>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                                onNavigate && onNavigate("books-contents")
+                            }
+                            leftIcon={<Eye size={14} />}
+                        >
+                            Lihat Semua
+                        </Button>
+                    </Flex>
+                </CardHeader>
+                <CardBody pt={0}>
+                    {recentActivities.length === 0 ? (
+                        <Box textAlign="center" py={8}>
+                            <Box fontSize="4xl" mb={3}>
+                                📚
+                            </Box>
+                            <Text fontSize="sm" color="gray.500" mb={4}>
+                                Belum ada aktivitas terbaru
+                            </Text>
+                            <Button
+                                size="sm"
+                                colorScheme="blue"
+                                onClick={() =>
+                                    onNavigate && onNavigate("books-add")
+                                }
+                                leftIcon={<Plus size={14} />}
+                            >
+                                Tambah Buku Pertama
+                            </Button>
                         </Box>
+                    ) : (
+                        <VStack spacing={0} align="stretch">
+                            {recentActivities.map((activity, index) => (
+                                <Box key={activity.id}>
+                                    <ActivityItem activity={activity} />
+                                    {index < recentActivities.length - 1 && (
+                                        <Divider borderColor={dividerColor} />
+                                    )}
+                                </Box>
+                            ))}
+                        </VStack>
                     )}
-                </VStack>
-
-                {/* Quick Stats */}
-                <Box>
-                    <Divider mb={4} />
-                    <SimpleGrid columns={3} spacing={4}>
-                        <VStack spacing={1}>
-                            <Text
-                                fontSize="2xl"
-                                fontWeight="bold"
-                                color="blue.600"
-                            >
-                                {data?.stats?.recentBooks?.length || 0}
-                            </Text>
-                            <Text
-                                fontSize="xs"
-                                color="gray.500"
-                                textAlign="center"
-                            >
-                                Buku Terbaru
-                            </Text>
-                        </VStack>
-                        <VStack spacing={1}>
-                            <Text
-                                fontSize="2xl"
-                                fontWeight="bold"
-                                color="green.600"
-                            >
-                                {data?.stats?.recentContents?.length || 0}
-                            </Text>
-                            <Text
-                                fontSize="xs"
-                                color="gray.500"
-                                textAlign="center"
-                            >
-                                Konten Terbaru
-                            </Text>
-                        </VStack>
-                        <VStack spacing={1}>
-                            <Text
-                                fontSize="2xl"
-                                fontWeight="bold"
-                                color="purple.600"
-                            >
-                                {recentActivities.length}
-                            </Text>
-                            <Text
-                                fontSize="xs"
-                                color="gray.500"
-                                textAlign="center"
-                            >
-                                Total Aktivitas
-                            </Text>
-                        </VStack>
-                    </SimpleGrid>
-                </Box>
-            </VStack>
-        </Box>
+                </CardBody>
+            </Card>
+        </motion.div>
     );
 };
 

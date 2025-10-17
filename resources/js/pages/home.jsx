@@ -243,15 +243,15 @@ const Home = () => {
                                     alt="Profile"
                                     className="w-full h-full object-cover"
                                 />
-                    </div>
+                            </div>
                             <div className="text-white">
                                 <h3 className="font-bold text-lg">NAMA</h3>
                                 <p className="text-white text-sm">
                                     email@gmail.com
                                 </p>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
 
                     <nav className="flex-1 p-6 mt-4">
                         <ul className="space-y-4">
@@ -270,7 +270,7 @@ const Home = () => {
                                         as="div"
                                     />
                                 </Link>
-                    </li>
+                            </li>
                             <li>
                                 <button
                                     onClick={() => {
@@ -283,20 +283,30 @@ const Home = () => {
                                     }}
                                     className="w-full flex items-center px-4 py-3 rounded-lg font-medium text-white hover:text-[#113939] hover:bg-gradient-to-br hover:from-white hover:via-[#F5E7C5] hover:to-[#EBCF8A] transition-colors"
                                 >
-                                    <span className="mr-3">
-                                        {renderIcon("logout")}
-                                    </span>
+                                    <svg
+                                        className="w-5 h-5 mr-3 flex-shrink-0"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                                        />
+                                    </svg>
                                     Keluar
                                 </button>
-                    </li>
-                </ul>
-            </nav>
-        </div>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
 
                 {/* Main Content Area */}
                 <div className="flex-1 bg-white w-full">
                     <div className="flex justify-between items-center p-6">
-                <div>
+                        <div>
                             <h1 className="text-2xl font-bold text-[#113939]">
                                 Hai,
                             </h1>
@@ -346,39 +356,39 @@ const Home = () => {
                                 </p>
                             </div>
                         ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 justify-items-center">
-                            {books.map((book) => (
-                                <button
-                                    key={book.id}
-                                    onClick={() => openModal(book)}
-                                    className="book-card bg-white rounded-lg p-3 hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-2"
-                                    style={{
-                                        width: 190,
-                                        height: 320,
-                                        boxShadow:
-                                            "0 0 20px rgba(0,0,0,0.15), 0 0 40px rgba(0,0,0,0.1)",
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 justify-items-center">
+                                {books.map((book) => (
+                                    <button
+                                        key={book.id}
+                                        onClick={() => openModal(book)}
+                                        className="book-card bg-white rounded-lg p-3 hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-2"
+                                        style={{
+                                            width: 190,
+                                            height: 320,
+                                            boxShadow:
+                                                "0 0 20px rgba(0,0,0,0.15), 0 0 40px rgba(0,0,0,0.1)",
                                             overflow: "hidden",
-                                    }}
-                                >
-                                    <div className="relative mb-4 flex items-center justify-center">
-                                        <img
+                                        }}
+                                    >
+                                        <div className="relative mb-4 flex items-center justify-center">
+                                            <img
                                                 src={
                                                     book.cover ||
                                                     "/images/Image-Cover Buku.svg"
                                                 }
-                                            alt="Book Cover"
-                                            className="object-cover rounded-lg"
-                                            style={{
-                                                width: 170,
-                                                height: 250,
-                                                filter: "drop-shadow(0px 4px 4px rgba(0,0,0,0.25))",
-                                            }}
+                                                alt="Book Cover"
+                                                className="object-cover rounded-lg"
+                                                style={{
+                                                    width: 170,
+                                                    height: 250,
+                                                    filter: "drop-shadow(0px 4px 4px rgba(0,0,0,0.25))",
+                                                }}
                                                 onError={(e) => {
                                                     e.target.src =
                                                         "/images/Image-Cover Buku.svg";
                                                 }}
-                                        />
-                        </div>
+                                            />
+                                        </div>
                                         <div
                                             className="text-left -mt-4 ml-3"
                                             style={{
@@ -408,15 +418,15 @@ const Home = () => {
                                                 }}
                                             >
                                                 {book.title || "Nama Buku"}
-                                        </p>
-                        </div>
-                                </button>
-                            ))}
-                </div>
+                                            </p>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
                         )}
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
 
             {/* Modal */}
             {modalOpen && (
@@ -450,7 +460,7 @@ const Home = () => {
                                     alt="Tutup"
                                     className="w-6 h-6 transition-transform group-hover:rotate-90"
                                 />
-                </button>
+                            </button>
                         </div>
                         <div
                             className="relative flex items-center"
@@ -516,8 +526,8 @@ const Home = () => {
                                                     : "grayscale"
                                             }`}
                                         />
-                        </button>
-                    </div>
+                                    </button>
+                                </div>
                                 <div className="flex items-center text-sm text-gray-600 mb-2">
                                     <svg
                                         className="w-4 h-4 mr-2"
@@ -533,24 +543,24 @@ const Home = () => {
                                             strokeWidth="2"
                                             d="M2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20"
                                         />
-                        </svg>
+                                    </svg>
                                     {getLanguageLabel(currentBook?.language)}
-                    </div>
+                                </div>
                                 <div className="flex items-center text-sm text-gray-600 mb-3">
                                     <svg
                                         className="w-4 h-4 mr-2"
                                         fill="currentColor"
                                         viewBox="0 0 20 20"
                                     >
-                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
                                         <path
                                             fillRule="evenodd"
                                             d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
                                             clipRule="evenodd"
                                         ></path>
-                        </svg>
+                                    </svg>
                                     {currentBook?.pages || 235}
-                    </div>
+                                </div>
                                 <Link
                                     to={`/tinjauan-pustaka/${
                                         currentBook?.id || ""
@@ -564,8 +574,8 @@ const Home = () => {
                                 >
                                     Baca
                                 </Link>
-                </div>
-            </div>
+                            </div>
+                        </div>
                         <div
                             className="flex p-4"
                             style={{
@@ -588,7 +598,7 @@ const Home = () => {
                                         Terakhir Diperbarui :{" "}
                                         {new Date().toLocaleDateString("id-ID")}
                                     </p>
-                        <p>Penerbit : [Nama Penerbit]</p>
+                                    <p>Penerbit : [Nama Penerbit]</p>
                                     <p>
                                         Hak cipta :{" "}
                                         {currentBook?.author || "Tim Penyusun"}
@@ -598,8 +608,8 @@ const Home = () => {
                                         {currentBook?.isbn ||
                                             "978-xxx-xxxx-xxxx"}
                                     </p>
-                    </div>
-                </div>
+                                </div>
+                            </div>
                             <div className="w-2/3 pl-3">
                                 <h5 className="text-sm font-bold text-gray-800 mb-1">
                                     Ringkasan
@@ -620,10 +630,10 @@ const Home = () => {
                                         </p>
                                     )}
                                 </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-    </div>
             )}
 
             {isAdmin && (

@@ -95,53 +95,53 @@ const DeleteCategoryModal = ({
                     transition={{ duration: 0.2 }}
                 >
                     <ModalHeader>
-                        <HStack spacing={3}>
-                            <Box
-                                p={2}
-                                bg="red.100"
-                                borderRadius="lg"
-                                color="red.600"
-                            >
-                                <Trash2 size={20} />
-                            </Box>
+                            <HStack spacing={3}>
+                                <Box
+                                    p={2}
+                                    bg="red.100"
+                                    borderRadius="lg"
+                                    color="red.600"
+                                >
+                                    <Trash2 size={20} />
+                                </Box>
                             <VStack align="start" spacing={1}>
                                 <Text
                                     fontSize="xl"
                                     fontWeight="bold"
                                     color={textColor}
                                 >
-                                    Hapus Kategori
-                                </Text>
-                                <Text fontSize="sm" color="gray.500">
-                                    Konfirmasi penghapusan kategori
-                                </Text>
-                            </VStack>
-                        </HStack>
-                    </ModalHeader>
-                    <ModalCloseButton />
+                                        Hapus Kategori
+                                    </Text>
+                                    <Text fontSize="sm" color="gray.500">
+                                        Konfirmasi penghapusan kategori
+                                    </Text>
+                                </VStack>
+                            </HStack>
+                        </ModalHeader>
+                        <ModalCloseButton />
 
                     <ModalBody pb={6}>
-                        <VStack spacing={6} align="stretch">
-                            {/* Warning Alert */}
+                            <VStack spacing={6} align="stretch">
+                                {/* Warning Alert */}
                             <Alert status="warning" borderRadius="lg">
                                 <AlertIcon />
-                                <Box>
+                                    <Box>
                                     <AlertTitle fontSize="sm">
                                         Peringatan!
-                                    </AlertTitle>
+                                        </AlertTitle>
                                     <AlertDescription fontSize="sm">
                                         Tindakan ini tidak dapat dibatalkan.
                                         Kategori akan dihapus secara permanen.
-                                    </AlertDescription>
-                                </Box>
-                            </Alert>
+                                        </AlertDescription>
+                                    </Box>
+                                </Alert>
 
-                            {/* Category Info */}
-                            <Box
-                                p={4}
+                                {/* Category Info */}
+                                <Box
+                                    p={4}
                                 bg={`${category.color || "blue"}.50`}
                                 borderRadius="xl"
-                                border="1px"
+                                    border="1px"
                                 borderColor={`${category.color || "blue"}.200`}
                             >
                                 <HStack spacing={3}>
@@ -152,26 +152,26 @@ const DeleteCategoryModal = ({
                                         color={`${
                                             category.color || "blue"
                                         }.600`}
-                                    >
-                                        <Tag size={24} />
-                                    </Box>
-                                    <VStack align="start" spacing={1} flex={1}>
-                                        <Text
-                                            fontWeight="bold"
-                                            color={textColor}
-                                            fontSize="lg"
-                                        >
-                                            {category.name}
-                                        </Text>
-                                        {category.description && (
-                                            <Text
-                                                fontSize="sm"
-                                                color="gray.600"
-                                                noOfLines={2}
                                             >
-                                                {category.description}
-                                            </Text>
-                                        )}
+                                                <Tag size={24} />
+                                            </Box>
+                                    <VStack align="start" spacing={1} flex={1}>
+                                                <Text
+                                                    fontWeight="bold"
+                                                    color={textColor}
+                                            fontSize="lg"
+                                                >
+                                                    {category.name}
+                                                </Text>
+                                            {category.description && (
+                                                <Text
+                                                    fontSize="sm"
+                                                color="gray.600"
+                                                    noOfLines={2}
+                                                >
+                                                    {category.description}
+                                                </Text>
+                                            )}
                                         <HStack spacing={2}>
                                             <Badge
                                                 colorScheme={
@@ -182,23 +182,23 @@ const DeleteCategoryModal = ({
                                             >
                                                 {category.color || "blue"}
                                             </Badge>
-                                            <Badge
+                                                <Badge
                                                 colorScheme={
                                                     category.status === "active"
                                                         ? "green"
                                                         : "gray"
                                                 }
-                                                variant="subtle"
-                                                fontSize="xs"
-                                            >
+                                                    variant="subtle"
+                                                    fontSize="xs"
+                                                >
                                                 {category.status === "active"
                                                     ? "Aktif"
                                                     : "Tidak Aktif"}
-                                            </Badge>
-                                        </HStack>
-                                    </VStack>
-                                </HStack>
-                            </Box>
+                                                </Badge>
+                                            </HStack>
+                                        </VStack>
+                                    </HStack>
+                                </Box>
 
                             {/* Books Count Warning */}
                             {hasBooks && (
@@ -218,49 +218,49 @@ const DeleteCategoryModal = ({
                                 </Alert>
                             )}
 
-                            {/* Confirmation Text */}
+                                {/* Confirmation Text */}
                             <Box textAlign="center">
                                 <Text fontSize="sm" color="gray.600">
                                     Apakah Anda yakin ingin menghapus kategori{" "}
-                                    <Text
+                                            <Text
                                         as="span"
                                         fontWeight="bold"
-                                        color={textColor}
-                                    >
+                                                color={textColor}
+                                            >
                                         "{category.name}"
                                     </Text>{" "}
                                     ?
-                                </Text>
-                            </Box>
-                        </VStack>
-                    </ModalBody>
+                                            </Text>
+                                    </Box>
+                            </VStack>
+                        </ModalBody>
 
-                    <ModalFooter>
-                        <HStack spacing={3}>
-                            <Button
+                        <ModalFooter>
+                            <HStack spacing={3}>
+                                <Button
                                 variant="outline"
-                                onClick={onClose}
+                                    onClick={onClose}
                                 isDisabled={isLoading}
-                            >
+                                >
                                 Batal
-                            </Button>
-                            <Button
-                                colorScheme="red"
-                                onClick={handleDelete}
-                                isLoading={isLoading}
-                                loadingText="Menghapus..."
-                                leftIcon={<Trash2 size={16} />}
+                                </Button>
+                                    <Button
+                                        colorScheme="red"
+                                        onClick={handleDelete}
+                                        isLoading={isLoading}
+                                        loadingText="Menghapus..."
+                                        leftIcon={<Trash2 size={16} />}
                                 isDisabled={hasBooks}
-                            >
+                                    >
                                 {hasBooks
                                     ? "Tidak Dapat Dihapus"
                                     : "Hapus Kategori"}
-                            </Button>
-                        </HStack>
-                    </ModalFooter>
+                                    </Button>
+                            </HStack>
+                        </ModalFooter>
                 </motion.div>
-            </ModalContent>
-        </Modal>
+                    </ModalContent>
+                </Modal>
     );
 };
 

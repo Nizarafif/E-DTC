@@ -22,7 +22,6 @@ import {
     ChevronLeft,
     ChevronRight,
     ChevronDown,
-    Library,
     Plus,
     List,
     Tag,
@@ -75,7 +74,6 @@ const Sidebar = ({
         },
         { id: "users", label: "Pengguna", icon: Users },
         { id: "analytics", label: "Analitik", icon: BarChart3 },
-        { id: "library", label: "Perpustakaan", icon: Library },
     ];
 
     const bottomItems = [

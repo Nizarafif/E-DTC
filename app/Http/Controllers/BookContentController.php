@@ -28,6 +28,9 @@ class BookContentController extends Controller
             if ($content->content_type === 'pdf' && $content->pdf_path) {
                 $content->pdf_url = asset('storage/' . $content->pdf_path);
             }
+            if ($content->content_type === 'docx' && $content->docx_path) {
+                $content->docx_url = asset('storage/' . $content->docx_path);
+            }
             return $content;
         });
         
@@ -232,6 +235,63 @@ class BookContentController extends Controller
     }
 
     /**
+     * Store DOCX file for book content.
+     */
+    public function storeDOCX(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'book_id' => 'required|exists:books,id',
+            'chapter_number' => 'nullable|string|max:50',
+            'chapter_title' => 'nullable|string|max:255',
+            'docx_file' => 'required|file|mimes:docx|max:51200', // Max 50MB
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $nextOrderIndex = BookContent::where('book_id', $request->book_id)
+                ->max('order_index') ?? 0;
+            $nextOrderIndex += 1;
+
+            $docxFile = $request->file('docx_file');
+            $fileName = time() . '_' . $docxFile->getClientOriginalName();
+            $docxPath = $docxFile->storeAs('book-contents', $fileName, 'public');
+
+            if (!$docxPath) {
+                throw new \Exception('Failed to store DOCX file');
+            }
+
+            $bookContent = BookContent::create([
+                'book_id' => $request->book_id,
+                'chapter_number' => $request->chapter_number,
+                'chapter_title' => $request->chapter_title ?: $docxFile->getClientOriginalName(),
+                'content' => null,
+                'content_type' => 'docx',
+                'pdf_path' => null,
+                'docx_path' => $docxPath,
+                'order_index' => $nextOrderIndex,
+            ]);
+
+            $bookContent->load('book');
+
+            return response()->json([
+                'message' => 'DOCX content uploaded successfully',
+                'data' => $bookContent
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to upload DOCX content',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Upload image for TinyMCE editor
      */
     public function uploadImage(Request $request)
@@ -284,6 +344,9 @@ class BookContentController extends Controller
             // Delete PDF file if exists
             if ($bookContent->pdf_path && Storage::disk('public')->exists($bookContent->pdf_path)) {
                 Storage::disk('public')->delete($bookContent->pdf_path);
+            }
+            if ($bookContent->docx_path && Storage::disk('public')->exists($bookContent->docx_path)) {
+                Storage::disk('public')->delete($bookContent->docx_path);
             }
             
             $bookContent->delete();

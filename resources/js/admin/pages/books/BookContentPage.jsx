@@ -39,7 +39,7 @@ const BookContentPage = () => {
     const [chapterNumber, setChapterNumber] = useState("");
     const [content, setContent] = useState("");
     const [uploadedPDF, setUploadedPDF] = useState(null);
-    const [contentType, setContentType] = useState("editor"); // "editor" or "pdf"
+    const [contentType, setContentType] = useState("editor"); // "editor" | "pdf"
     const [isLoading, setIsLoading] = useState(false);
     const [isFetchingBooks, setIsFetchingBooks] = useState(true);
     const navigate = useNavigate();
@@ -188,8 +188,10 @@ const BookContentPage = () => {
 
     const handleRemovePDF = () => {
         setUploadedPDF(null);
-        setContentType("editor");
+        if (contentType === "pdf") setContentType("editor");
     };
+
+    // DOCX upload removed
 
     const handleSaveContent = async () => {
         if (!selectedBookId) {
@@ -500,8 +502,6 @@ const BookContentPage = () => {
                     </CardBody>
                 </Card>
 
-                {/* Daftar chapter dihapus sesuai permintaan */}
-
                 {/* Content Editor */}
                 <Card bg={bgColor} border="1px" borderColor={borderColor}>
                     <CardHeader pb={2}>
@@ -518,9 +518,10 @@ const BookContentPage = () => {
                     <CardBody pt={2}>
                         <Tabs
                             index={contentType === "editor" ? 0 : 1}
-                            onChange={(index) =>
-                                setContentType(index === 0 ? "editor" : "pdf")
-                            }
+                            onChange={(index) => {
+                                if (index === 0) setContentType("editor");
+                                else if (index === 1) setContentType("pdf");
+                            }}
                         >
                             <TabList>
                                 <Tab>

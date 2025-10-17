@@ -17,6 +17,9 @@ import { BooksPage } from "./pages/books";
 // import { CategoriesPage } from "./pages/categories"; // Disabled
 import BookContentPage from "./pages/books/BookContentPage";
 import BookContentsPage from "./pages/books/BookContentsPage";
+import UsersPage from "./pages/users/UsersPage";
+import { AnalyticsPage } from "./pages/analytics";
+import { SettingsPage } from "./pages/settings";
 
 const AdminDashboard = ({ onLogout }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
@@ -74,10 +77,6 @@ const AdminDashboard = ({ onLogout }) => {
                 { label: "Dashboard", href: "#" },
                 { label: "Analitik", href: "#" },
             ],
-            library: [
-                { label: "Dashboard", href: "#" },
-                { label: "Perpustakaan", href: "#" },
-            ],
             settings: [
                 { label: "Dashboard", href: "#" },
                 { label: "Pengaturan", href: "#" },
@@ -96,7 +95,6 @@ const AdminDashboard = ({ onLogout }) => {
             // categories: "Kategori", // Disabled
             users: "Pengguna",
             analytics: "Analitik",
-            library: "Perpustakaan",
             settings: "Pengaturan",
         };
         return titleMap[activeItem] || "Dashboard";
@@ -119,173 +117,11 @@ const AdminDashboard = ({ onLogout }) => {
             // case "categories":
             //     return <CategoriesPage />; // Disabled
             case "users":
-                return (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4 }}
-                    >
-                        <Box
-                            bg={cardBgColor}
-                            p={8}
-                            borderRadius="2xl"
-                            border="1px"
-                            borderColor={cardBorderColor}
-                            textAlign="center"
-                            minH="400px"
-                            display="flex"
-                            alignItems="center"
-                            justifyContent="center"
-                        >
-                            <motion.div
-                                initial={{ scale: 0.8, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                transition={{ delay: 0.2, duration: 0.4 }}
-                            >
-                                <Box fontSize="6xl" mb={4}>
-                                    👥
-                                </Box>
-                                <Box
-                                    fontSize="xl"
-                                    fontWeight="bold"
-                                    color="teal.600"
-                                    mb={2}
-                                >
-                                    Pengguna
-                                </Box>
-                                <Box color="gray.500">
-                                    Fitur kelola pengguna akan segera hadir
-                                </Box>
-                            </motion.div>
-                        </Box>
-                    </motion.div>
-                );
+                return <UsersPage />;
             case "analytics":
-                return (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4 }}
-                    >
-                        <Box
-                            bg={cardBgColor}
-                            p={8}
-                            borderRadius="2xl"
-                            border="1px"
-                            borderColor={cardBorderColor}
-                            textAlign="center"
-                            minH="400px"
-                            display="flex"
-                            alignItems="center"
-                            justifyContent="center"
-                        >
-                            <motion.div
-                                initial={{ scale: 0.8, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                transition={{ delay: 0.2, duration: 0.4 }}
-                            >
-                                <Box fontSize="6xl" mb={4}>
-                                    📊
-                                </Box>
-                                <Box
-                                    fontSize="xl"
-                                    fontWeight="bold"
-                                    color="teal.600"
-                                    mb={2}
-                                >
-                                    Analitik
-                                </Box>
-                                <Box color="gray.500">
-                                    Fitur analitik akan segera hadir
-                                </Box>
-                            </motion.div>
-                        </Box>
-                    </motion.div>
-                );
-            case "library":
-                return (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4 }}
-                    >
-                        <Box
-                            bg={cardBgColor}
-                            p={8}
-                            borderRadius="2xl"
-                            border="1px"
-                            borderColor={cardBorderColor}
-                            textAlign="center"
-                            minH="400px"
-                            display="flex"
-                            alignItems="center"
-                            justifyContent="center"
-                        >
-                            <motion.div
-                                initial={{ scale: 0.8, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                transition={{ delay: 0.2, duration: 0.4 }}
-                            >
-                                <Box fontSize="6xl" mb={4}>
-                                    🏛️
-                                </Box>
-                                <Box
-                                    fontSize="xl"
-                                    fontWeight="bold"
-                                    color="teal.600"
-                                    mb={2}
-                                >
-                                    Perpustakaan
-                                </Box>
-                                <Box color="gray.500">
-                                    Fitur perpustakaan akan segera hadir
-                                </Box>
-                            </motion.div>
-                        </Box>
-                    </motion.div>
-                );
+                return <AnalyticsPage />;
             case "settings":
-                return (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4 }}
-                    >
-                        <Box
-                            bg={cardBgColor}
-                            p={8}
-                            borderRadius="2xl"
-                            border="1px"
-                            borderColor={cardBorderColor}
-                            textAlign="center"
-                            minH="400px"
-                            display="flex"
-                            alignItems="center"
-                            justifyContent="center"
-                        >
-                            <motion.div
-                                initial={{ scale: 0.8, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                transition={{ delay: 0.2, duration: 0.4 }}
-                            >
-                                <Box fontSize="6xl" mb={4}>
-                                    ⚙️
-                                </Box>
-                                <Box
-                                    fontSize="xl"
-                                    fontWeight="bold"
-                                    color="teal.600"
-                                    mb={2}
-                                >
-                                    Pengaturan
-                                </Box>
-                                <Box color="gray.500">
-                                    Fitur pengaturan akan segera hadir
-                                </Box>
-                            </motion.div>
-                        </Box>
-                    </motion.div>
-                );
+                return <SettingsPage />;
             default:
                 return <DashboardOverview />;
         }
