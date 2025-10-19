@@ -47,6 +47,12 @@ const Header = ({ title, breadcrumbs, onLogout, sidebarWidth }) => {
     const borderColor = useColorModeValue("gray.100", "gray.700");
     const textColor = useColorModeValue("gray.700", "gray.200");
     const searchBg = useColorModeValue("gray.50", "gray.700");
+    const hoverBg = useColorModeValue("gray.100", "gray.700");
+    const menuHoverBg = useColorModeValue("gray.50", "gray.700");
+    const backdropColor = useColorModeValue(
+        "rgba(255, 255, 255, 0.8)",
+        "rgba(26, 32, 44, 0.8)"
+    );
 
     const headerVariants = {
         initial: { y: -20, opacity: 0 },
@@ -137,10 +143,7 @@ const Header = ({ title, breadcrumbs, onLogout, sidebarWidth }) => {
                 py={3}
                 shadow="sm"
                 backdropFilter="blur(10px)"
-                backgroundColor={useColorModeValue(
-                    "rgba(255, 255, 255, 0.8)",
-                    "rgba(26, 32, 44, 0.8)"
-                )}
+                backgroundColor={backdropColor}
             >
                 <HStack justify="space-between" align="center">
                     {/* Left Section - Title & Breadcrumbs */}
@@ -266,10 +269,7 @@ const Header = ({ title, breadcrumbs, onLogout, sidebarWidth }) => {
                                     size="md"
                                     color={textColor}
                                     _hover={{
-                                        bg: useColorModeValue(
-                                            "gray.100",
-                                            "gray.700"
-                                        ),
+                                        bg: hoverBg,
                                     }}
                                     borderRadius="xl"
                                     aria-label="Toggle color mode"
@@ -295,10 +295,7 @@ const Header = ({ title, breadcrumbs, onLogout, sidebarWidth }) => {
                                             size="md"
                                             color={textColor}
                                             _hover={{
-                                                bg: useColorModeValue(
-                                                    "gray.100",
-                                                    "gray.700"
-                                                ),
+                                                bg: hoverBg,
                                             }}
                                             borderRadius="xl"
                                         />
@@ -360,10 +357,7 @@ const Header = ({ title, breadcrumbs, onLogout, sidebarWidth }) => {
                                             <MenuItem
                                                 key={n.id}
                                                 _hover={{
-                                                    bg: useColorModeValue(
-                                                        "gray.50",
-                                                        "gray.700"
-                                                    ),
+                                                    bg: menuHoverBg,
                                                 }}
                                             >
                                                 <VStack
@@ -409,10 +403,7 @@ const Header = ({ title, breadcrumbs, onLogout, sidebarWidth }) => {
                                         p={2}
                                         borderRadius="xl"
                                         _hover={{
-                                            bg: useColorModeValue(
-                                                "gray.100",
-                                                "gray.700"
-                                            ),
+                                            bg: hoverBg,
                                         }}
                                         transition="all 0.2s"
                                     >
@@ -469,10 +460,7 @@ const Header = ({ title, breadcrumbs, onLogout, sidebarWidth }) => {
                                             as={RouterLink}
                                             to="/"
                                             _hover={{
-                                                bg: useColorModeValue(
-                                                    "gray.50",
-                                                    "gray.700"
-                                                ),
+                                                bg: menuHoverBg,
                                             }}
                                         >
                                             Lihat Home
@@ -480,10 +468,7 @@ const Header = ({ title, breadcrumbs, onLogout, sidebarWidth }) => {
                                         <MenuItem
                                             icon={<User size={16} />}
                                             _hover={{
-                                                bg: useColorModeValue(
-                                                    "gray.50",
-                                                    "gray.700"
-                                                ),
+                                                bg: menuHoverBg,
                                             }}
                                         >
                                             Profil Saya
@@ -491,10 +476,7 @@ const Header = ({ title, breadcrumbs, onLogout, sidebarWidth }) => {
                                         <MenuItem
                                             icon={<Settings size={16} />}
                                             _hover={{
-                                                bg: useColorModeValue(
-                                                    "gray.50",
-                                                    "gray.700"
-                                                ),
+                                                bg: menuHoverBg,
                                             }}
                                         >
                                             Pengaturan

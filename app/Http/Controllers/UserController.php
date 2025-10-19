@@ -165,5 +165,31 @@ class UserController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Update user password.
+     */
+    public function updatePassword(Request $request, $id)
+    {
+        $request->validate([
+            'password' => 'required|string|min:6',
+        ]);
+
+        try {
+            $user = User::findOrFail($id);
+            $user->update([
+                'password' => bcrypt($request->password)
+            ]);
+            
+            return response()->json([
+                'message' => 'Password updated successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to update password',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
 

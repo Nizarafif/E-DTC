@@ -53,21 +53,9 @@ const AnalyticsPage = () => {
     });
     const [isLoading, setIsLoading] = useState(true);
     const [lastUpdated, setLastUpdated] = useState(new Date());
-    const [autoRefresh, setAutoRefresh] = useState(true);
     const [timeRange, setTimeRange] = useState("7d");
 
     const toast = useToast();
-
-    // Auto-refresh data
-    useEffect(() => {
-        if (!autoRefresh) return;
-
-        const interval = setInterval(() => {
-            fetchAnalytics();
-        }, 30000); // Refresh every 30 seconds
-
-        return () => clearInterval(interval);
-    }, [autoRefresh, timeRange]);
 
     // Initial load
     useEffect(() => {

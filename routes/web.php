@@ -6,6 +6,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\BookContentController;
 use App\Http\Controllers\ImageUploadController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\AnalyticsController;
 // use App\Http\Middleware\VerifyCsrfToken; // gunakan FQCN bawaan framework di bawah
@@ -42,10 +43,19 @@ Route::withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken
     // Image upload for TinyMCE
     Route::post('/api/upload-image', [ImageUploadController::class, 'upload']);
     
+    // Auth routes
+    Route::post('/auth/login', [AuthController::class, 'login']);
+    Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::get('/auth/me', [AuthController::class, 'me']);
+    
     // User routes
     Route::get('/users', [UserController::class, 'index']);
     Route::get('/users/stats', [UserController::class, 'stats']);
     Route::post('/users', [UserController::class, 'store']);
+    Route::get('/users/{id}', [UserController::class, 'show']);
+    Route::put('/users/{id}', [UserController::class, 'update']);
+    Route::delete('/users/{id}', [UserController::class, 'destroy']);
+    Route::put('/users/{id}/password', [UserController::class, 'updatePassword']);
     
     // Notification routes
     Route::get('/notifications', [NotificationController::class, 'index']);

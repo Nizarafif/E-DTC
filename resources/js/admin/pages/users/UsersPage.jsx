@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Box,
@@ -47,6 +47,10 @@ import {
     Center,
 } from "@chakra-ui/react";
 import AddUserModal from "../../components/AddUserModal";
+import UserDetailModal from "../../components/UserDetailModal";
+import UserEditModal from "../../components/UserEditModal";
+import ChangePasswordModal from "../../components/ChangePasswordModal";
+import DeleteUserModal from "../../components/DeleteUserModal";
 import {
     Users,
     UserPlus,
@@ -65,6 +69,7 @@ import {
     Download,
     UserCheck,
     UserX,
+    Key,
 } from "lucide-react";
 
 const UsersPage = () => {
@@ -72,33 +77,23 @@ const UsersPage = () => {
     const [filteredUsers, setFilteredUsers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [lastUpdated, setLastUpdated] = useState(new Date());
-    const [autoRefresh, setAutoRefresh] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [sortBy, setSortBy] = useState("created_at");
     const [sortOrder, setSortOrder] = useState("desc");
     const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] =
+        useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
 
     const bgColor = useColorModeValue("white", "gray.800");
     const borderColor = useColorModeValue("gray.200", "gray.600");
     const textColor = useColorModeValue("gray.700", "gray.200");
     const cardBg = useColorModeValue("gray.50", "gray.700");
+    const hoverBg = useColorModeValue("gray.50", "gray.700");
     const toast = useToast();
-
-    // Auto refresh setiap 30 detik
-    useEffect(() => {
-        if (autoRefresh) {
-            const interval = setInterval(() => {
-                fetchUsers();
-            }, 30000);
-
-            return () => clearInterval(interval);
-        }
-    }, [autoRefresh]);
-
-    // Load data awal
-    useEffect(() => {
-        fetchUsers();
-    }, []);
 
     // Filter dan sort users
     useEffect(() => {
@@ -135,7 +130,7 @@ const UsersPage = () => {
         setFilteredUsers(filtered);
     }, [users, searchTerm, sortBy, sortOrder]);
 
-    const fetchUsers = async () => {
+    const fetchUsers = useCallback(async () => {
         try {
             setIsLoading(true);
 
@@ -202,26 +197,15 @@ const UsersPage = () => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [toast]);
+
+    // Load data awal
+    useEffect(() => {
+        fetchUsers();
+    }, []);
 
     const handleManualRefresh = () => {
         fetchUsers();
-    };
-
-    const toggleAutoRefresh = () => {
-        setAutoRefresh(!autoRefresh);
-        toast({
-            title: autoRefresh
-                ? "Auto Refresh Dimatikan"
-                : "Auto Refresh Diaktifkan",
-            description: autoRefresh
-                ? "Data tidak akan update otomatis"
-                : "Data akan update setiap 30 detik",
-            status: "info",
-            duration: 2000,
-            isClosable: true,
-            position: "top-right",
-        });
     };
 
     const handleUserAdded = (newUser) => {
@@ -245,6 +229,80 @@ const UsersPage = () => {
 
     const closeAddUserModal = () => {
         setIsAddUserModalOpen(false);
+    };
+
+    const openDetailModal = (user) => {
+        setSelectedUser(user);
+        setIsDetailModalOpen(true);
+    };
+
+    const closeDetailModal = () => {
+        setIsDetailModalOpen(false);
+        setSelectedUser(null);
+    };
+
+    const openEditModal = (user) => {
+        setSelectedUser(user);
+        setIsEditModalOpen(true);
+    };
+
+    const closeEditModal = () => {
+        setIsEditModalOpen(false);
+        setSelectedUser(null);
+    };
+
+    const openChangePasswordModal = (user) => {
+        setSelectedUser(user);
+        setIsChangePasswordModalOpen(true);
+    };
+
+    const closeChangePasswordModal = () => {
+        setIsChangePasswordModalOpen(false);
+        setSelectedUser(null);
+    };
+
+    const openDeleteModal = (user) => {
+        setSelectedUser(user);
+        setIsDeleteModalOpen(true);
+    };
+
+    const closeDeleteModal = () => {
+        setIsDeleteModalOpen(false);
+        setSelectedUser(null);
+    };
+
+    const handleUserUpdated = (updatedUser) => {
+        // Update user in the list
+        setUsers((prevUsers) =>
+            prevUsers.map((user) =>
+                user.id === updatedUser.id ? updatedUser : user
+            )
+        );
+
+        toast({
+            title: "Pengguna Berhasil Diperbarui",
+            description: `${updatedUser.name} telah diperbarui`,
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+            position: "top-right",
+        });
+    };
+
+    const handleUserDeleted = (deletedUser) => {
+        // Remove user from the list
+        setUsers((prevUsers) =>
+            prevUsers.filter((user) => user.id !== deletedUser.id)
+        );
+
+        toast({
+            title: "Pengguna Berhasil Dihapus",
+            description: `${deletedUser.name} telah dihapus dari sistem`,
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+            position: "top-right",
+        });
     };
 
     const formatDate = (dateString) => {
@@ -443,15 +501,6 @@ const UsersPage = () => {
 
                         <HStack spacing={3}>
                             <Button
-                                size="sm"
-                                variant={autoRefresh ? "solid" : "outline"}
-                                colorScheme={autoRefresh ? "green" : "gray"}
-                                leftIcon={<Activity size={16} />}
-                                onClick={toggleAutoRefresh}
-                            >
-                                {autoRefresh ? "Auto ON" : "Auto OFF"}
-                            </Button>
-                            <Button
                                 leftIcon={<RefreshCw size={16} />}
                                 variant="outline"
                                 onClick={handleManualRefresh}
@@ -474,12 +523,6 @@ const UsersPage = () => {
                             <Clock size={14} />
                             <Text>
                                 Terakhir update: {formatTimeAgo(lastUpdated)}
-                            </Text>
-                        </HStack>
-                        <HStack spacing={1}>
-                            <Activity size={14} />
-                            <Text>
-                                Status: {autoRefresh ? "Live" : "Manual"}
                             </Text>
                         </HStack>
                     </HStack>
@@ -663,10 +706,7 @@ const UsersPage = () => {
                                                             delay: index * 0.05,
                                                         }}
                                                         _hover={{
-                                                            bg: useColorModeValue(
-                                                                "gray.50",
-                                                                "gray.700"
-                                                            ),
+                                                            bg: hoverBg,
                                                         }}
                                                     >
                                                         <Td>
@@ -785,6 +825,11 @@ const UsersPage = () => {
                                                                                 }
                                                                             />
                                                                         }
+                                                                        onClick={() =>
+                                                                            openDetailModal(
+                                                                                user
+                                                                            )
+                                                                        }
                                                                     >
                                                                         Lihat
                                                                         Detail
@@ -797,9 +842,31 @@ const UsersPage = () => {
                                                                                 }
                                                                             />
                                                                         }
+                                                                        onClick={() =>
+                                                                            openEditModal(
+                                                                                user
+                                                                            )
+                                                                        }
                                                                     >
                                                                         Edit
                                                                         Pengguna
+                                                                    </MenuItem>
+                                                                    <MenuItem
+                                                                        icon={
+                                                                            <Key
+                                                                                size={
+                                                                                    14
+                                                                                }
+                                                                            />
+                                                                        }
+                                                                        onClick={() =>
+                                                                            openChangePasswordModal(
+                                                                                user
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        Ubah
+                                                                        Password
                                                                     </MenuItem>
                                                                     <MenuDivider />
                                                                     <MenuItem
@@ -811,6 +878,11 @@ const UsersPage = () => {
                                                                             />
                                                                         }
                                                                         color="red.500"
+                                                                        onClick={() =>
+                                                                            openDeleteModal(
+                                                                                user
+                                                                            )
+                                                                        }
                                                                     >
                                                                         Hapus
                                                                         Pengguna
@@ -835,6 +907,47 @@ const UsersPage = () => {
                 isOpen={isAddUserModalOpen}
                 onClose={closeAddUserModal}
                 onUserAdded={handleUserAdded}
+            />
+
+            {/* User Detail Modal */}
+            <UserDetailModal
+                isOpen={isDetailModalOpen}
+                onClose={closeDetailModal}
+                user={selectedUser}
+            />
+
+            {/* User Edit Modal */}
+            <UserEditModal
+                isOpen={isEditModalOpen}
+                onClose={closeEditModal}
+                user={selectedUser}
+                onUserUpdated={handleUserUpdated}
+            />
+
+            {/* Change Password Modal */}
+            <ChangePasswordModal
+                isOpen={isChangePasswordModalOpen}
+                onClose={closeChangePasswordModal}
+                user={selectedUser}
+                onPasswordChanged={() => {
+                    // Optional: refresh user data or show notification
+                    toast({
+                        title: "Password Diubah",
+                        description: "Password pengguna telah berhasil diubah",
+                        status: "success",
+                        duration: 3000,
+                        isClosable: true,
+                        position: "top-right",
+                    });
+                }}
+            />
+
+            {/* Delete User Modal */}
+            <DeleteUserModal
+                isOpen={isDeleteModalOpen}
+                onClose={closeDeleteModal}
+                user={selectedUser}
+                onUserDeleted={handleUserDeleted}
             />
         </motion.div>
     );

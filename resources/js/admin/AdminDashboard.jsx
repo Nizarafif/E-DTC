@@ -14,7 +14,6 @@ import MainContent from "./components/MainContent";
 import DashboardOverview from "./components/DashboardOverview";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { BooksPage } from "./pages/books";
-// import { CategoriesPage } from "./pages/categories"; // Disabled
 import BookContentPage from "./pages/books/BookContentPage";
 import BookContentsPage from "./pages/books/BookContentsPage";
 import UsersPage from "./pages/users/UsersPage";
@@ -114,8 +113,6 @@ const AdminDashboard = ({ onLogout }) => {
                 return <BookContentPage />;
             case "books-contents":
                 return <BookContentsPage />;
-            // case "categories":
-            //     return <CategoriesPage />; // Disabled
             case "users":
                 return <UsersPage />;
             case "analytics":

@@ -495,7 +495,6 @@ const TinjauanPustaka = () => {
                             </div>
                         ))}
 
-                        {/* Tampilkan pesan jika tidak ada konten */}
                         {chapters.length === 0 && pdfChapters.length === 0 && (
                             <div className="px-4 py-3 text-white/80 border-b border-white/10">
                                 Belum ada konten.
@@ -504,9 +503,7 @@ const TinjauanPustaka = () => {
                     </nav>
                 </aside>
 
-                {/* Area kanan */}
                 <section className="md:ml-64 ml-0 min-h-screen flex flex-col relative">
-                    {/* Header di kanan, full width area konten */}
                     <div className="bg-[#EAD6A8] text-[#113939] top-0 left-0 md:left-64 w-full fixed z-20 toolbar-shadow">
                         <div className="flex items-center justify-between px-4 py-2">
                             <div className="flex items-center space-x-3">
@@ -529,13 +526,11 @@ const TinjauanPustaka = () => {
                         </div>
                     </div>
 
-                    {/* Viewer utama (only this area scrolls) */}
                     <div
                         ref={readerRef}
                         className="w-full flex items-center justify-center mt-12"
                     >
-                        <div className="bg-white w-full min-h-[70vh] pb-20 md:pb-16 md:w-[70%] lg:w-[55%] xl:w-[45%] 2xl:w-[40%]">
-                            {/* Konten chapter aktif */}
+                        <div className="bg-white w-full min-h-[70vh] pb-16 md:pb-12 md:w-[70%] lg:w-[55%] xl:w-[45%] 2xl:w-[40%]">
                             {showPdfViewer && pdfContent ? (
                                 <div className="h-full">
                                     <PDFImageViewer

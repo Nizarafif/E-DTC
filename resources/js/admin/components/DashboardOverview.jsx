@@ -70,24 +70,12 @@ const DashboardOverview = ({ onNavigate }) => {
     });
     const [isLoading, setIsLoading] = useState(true);
     const [lastUpdated, setLastUpdated] = useState(new Date());
-    const [autoRefresh, setAutoRefresh] = useState(true);
 
     const bgColor = useColorModeValue("white", "gray.800");
     const borderColor = useColorModeValue("gray.200", "gray.600");
     const textColor = useColorModeValue("gray.700", "gray.200");
     const cardBg = useColorModeValue("gray.50", "gray.700");
     const toast = useToast();
-
-    // Auto refresh setiap 30 detik
-    useEffect(() => {
-        if (autoRefresh) {
-            const interval = setInterval(() => {
-                fetchDashboardData();
-            }, 30000); // 30 detik
-
-            return () => clearInterval(interval);
-        }
-    }, [autoRefresh]);
 
     // Load data awal
     useEffect(() => {
@@ -276,22 +264,6 @@ const DashboardOverview = ({ onNavigate }) => {
         fetchDashboardData();
     };
 
-    const toggleAutoRefresh = () => {
-        setAutoRefresh(!autoRefresh);
-        toast({
-            title: autoRefresh
-                ? "Auto Refresh Dimatikan"
-                : "Auto Refresh Diaktifkan",
-            description: autoRefresh
-                ? "Dashboard tidak akan update otomatis"
-                : "Dashboard akan update setiap 30 detik",
-            status: "info",
-            duration: 2000,
-            isClosable: true,
-            position: "top-right",
-        });
-    };
-
     const formatDate = (dateString) => {
         if (!dateString) return "-";
         return new Date(dateString).toLocaleDateString("id-ID", {
@@ -376,15 +348,6 @@ const DashboardOverview = ({ onNavigate }) => {
 
                         <HStack spacing={3}>
                             <Button
-                                size="sm"
-                                variant={autoRefresh ? "solid" : "outline"}
-                                colorScheme={autoRefresh ? "green" : "gray"}
-                                leftIcon={<Activity size={16} />}
-                                onClick={toggleAutoRefresh}
-                            >
-                                {autoRefresh ? "Auto ON" : "Auto OFF"}
-                            </Button>
-                            <Button
                                 leftIcon={<RefreshCw size={16} />}
                                 variant="outline"
                                 onClick={handleManualRefresh}
@@ -400,12 +363,6 @@ const DashboardOverview = ({ onNavigate }) => {
                             <Clock size={14} />
                             <Text>
                                 Terakhir update: {formatTimeAgo(lastUpdated)}
-                            </Text>
-                        </HStack>
-                        <HStack spacing={1}>
-                            <Activity size={14} />
-                            <Text>
-                                Status: {autoRefresh ? "Live" : "Manual"}
                             </Text>
                         </HStack>
                     </HStack>
