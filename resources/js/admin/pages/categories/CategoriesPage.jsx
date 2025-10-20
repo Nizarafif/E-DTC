@@ -124,9 +124,9 @@ const CategoriesPage = () => {
         const matchesSearch =
             !searchTerm ||
             category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    (category.description &&
-                        category.description
-                            .toLowerCase()
+            (category.description &&
+                category.description
+                    .toLowerCase()
                     .includes(searchTerm.toLowerCase()));
 
         const matchesStatus = !filterStatus || category.status === filterStatus;
@@ -202,7 +202,6 @@ const CategoriesPage = () => {
     };
 
     const handleViewCategory = (category) => {
-        // TODO: Implement view category details
         console.log("View category:", category);
     };
 
@@ -259,7 +258,7 @@ const CategoriesPage = () => {
                                     color="blue.600"
                                 >
                                     <Tag size={24} />
-                                    </Box>
+                                </Box>
                                 <VStack align="start" spacing={1}>
                                     <Text
                                         fontSize="2xl"
@@ -268,15 +267,15 @@ const CategoriesPage = () => {
                                     >
                                         Kelola Kategori Buku
                                     </Text>
-                                <Text fontSize="sm" color="gray.500">
+                                    <Text fontSize="sm" color="gray.500">
                                         Organisir dan kelola kategori buku
                                         dengan mudah
-                                </Text>
-                            </VStack>
+                                    </Text>
+                                </VStack>
                             </HStack>
 
                             <HStack spacing={3}>
-                            <Button
+                                <Button
                                     leftIcon={<RefreshCw size={16} />}
                                     variant="outline"
                                     onClick={fetchCategories}
@@ -286,12 +285,12 @@ const CategoriesPage = () => {
                                 </Button>
                                 <Button
                                     colorScheme="blue"
-                                leftIcon={<Plus size={16} />}
-                                onClick={() => setIsAddModalOpen(true)}
-                            >
-                                Tambah Kategori
-                            </Button>
-                        </HStack>
+                                    leftIcon={<Plus size={16} />}
+                                    onClick={() => setIsAddModalOpen(true)}
+                                >
+                                    Tambah Kategori
+                                </Button>
+                            </HStack>
                         </Flex>
 
                         {/* Stats Cards */}
@@ -391,99 +390,99 @@ const CategoriesPage = () => {
 
                         {/* Search and Filters */}
                         <VStack spacing={4} align="stretch">
-                        <HStack spacing={4} align="end">
-                            {/* Search */}
-                            <Box flex={1}>
-                                <InputGroup>
-                                    <InputLeftElement pointerEvents="none">
+                            <HStack spacing={4} align="end">
+                                {/* Search */}
+                                <Box flex={1}>
+                                    <InputGroup>
+                                        <InputLeftElement pointerEvents="none">
                                             <Search
                                                 size={16}
                                                 color="gray.400"
                                             />
-                                    </InputLeftElement>
-                                    <Input
+                                        </InputLeftElement>
+                                        <Input
                                             placeholder="Cari kategori berdasarkan nama atau deskripsi..."
-                                        value={searchTerm}
-                                        onChange={(e) =>
-                                            setSearchTerm(e.target.value)
-                                        }
-                                        borderRadius="lg"
-                                        _focus={{
+                                            value={searchTerm}
+                                            onChange={(e) =>
+                                                setSearchTerm(e.target.value)
+                                            }
+                                            borderRadius="lg"
+                                            _focus={{
                                                 borderColor: "blue.500",
                                                 boxShadow: "0 0 0 1px blue.500",
-                                        }}
-                                    />
-                                </InputGroup>
-                            </Box>
+                                            }}
+                                        />
+                                    </InputGroup>
+                                </Box>
 
-                            {/* Status Filter */}
-                            <Select
-                                placeholder="Semua Status"
-                                value={filterStatus}
-                                onChange={(e) =>
-                                    setFilterStatus(e.target.value)
-                                }
-                                borderRadius="lg"
-                                maxW="150px"
-                            >
-                                <option value="active">Aktif</option>
+                                {/* Status Filter */}
+                                <Select
+                                    placeholder="Semua Status"
+                                    value={filterStatus}
+                                    onChange={(e) =>
+                                        setFilterStatus(e.target.value)
+                                    }
+                                    borderRadius="lg"
+                                    maxW="150px"
+                                >
+                                    <option value="active">Aktif</option>
                                     <option value="inactive">
                                         Tidak Aktif
                                     </option>
-                            </Select>
+                                </Select>
 
-                            {/* Color Filter */}
-                            <Select
-                                placeholder="Semua Warna"
-                                value={filterColor}
+                                {/* Color Filter */}
+                                <Select
+                                    placeholder="Semua Warna"
+                                    value={filterColor}
                                     onChange={(e) =>
                                         setFilterColor(e.target.value)
                                     }
-                                borderRadius="lg"
-                                maxW="150px"
-                            >
-                                {colorOptions.map((option) => (
-                                    <option
-                                        key={option.value}
-                                        value={option.value}
-                                    >
-                                        {option.label}
-                                    </option>
-                                ))}
-                            </Select>
+                                    borderRadius="lg"
+                                    maxW="150px"
+                                >
+                                    {colorOptions.map((option) => (
+                                        <option
+                                            key={option.value}
+                                            value={option.value}
+                                        >
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </Select>
 
-                            {/* Clear Filters */}
-                            {activeFiltersCount > 0 && (
-                                <Button
-                                    variant="outline"
-                                    onClick={clearFilters}
-                                    leftIcon={<Filter size={16} />}
+                                {/* Clear Filters */}
+                                {activeFiltersCount > 0 && (
+                                    <Button
+                                        variant="outline"
+                                        onClick={clearFilters}
+                                        leftIcon={<Filter size={16} />}
                                     >
                                         Clear ({activeFiltersCount})
-                                </Button>
-                            )}
-                        </HStack>
+                                    </Button>
+                                )}
+                            </HStack>
 
                             {/* Results Info and View Toggle */}
                             <Flex align="center" justify="space-between">
                                 <HStack spacing={4}>
-                                <Text fontSize="sm" color="gray.500">
+                                    <Text fontSize="sm" color="gray.500">
                                         Menampilkan {filteredCategories.length}{" "}
                                         dari {totalCategories} kategori
-                                </Text>
+                                    </Text>
                                     {selectedCategories.length > 0 && (
                                         <Badge
                                             colorScheme="blue"
                                             variant="subtle"
                                         >
                                             {selectedCategories.length} dipilih
-                            </Badge>
-                            )}
-                        </HStack>
+                                        </Badge>
+                                    )}
+                                </HStack>
 
                                 <HStack spacing={2}>
-                                                <Button
-                                                    size="sm"
+                                    <Button
+                                        size="sm"
                                         variant={
                                             viewMode === "grid"
                                                 ? "solid"
@@ -494,9 +493,9 @@ const CategoriesPage = () => {
                                         leftIcon={<Tag size={14} />}
                                     >
                                         Grid
-                                                </Button>
-                                                <Button
-                                                    size="sm"
+                                    </Button>
+                                    <Button
+                                        size="sm"
                                         variant={
                                             viewMode === "table"
                                                 ? "solid"
@@ -507,10 +506,10 @@ const CategoriesPage = () => {
                                         leftIcon={<Settings size={14} />}
                                     >
                                         Tabel
-                                                </Button>
-                                            </HStack>
+                                    </Button>
+                                </HStack>
                             </Flex>
-                            </VStack>
+                        </VStack>
                     </VStack>
                 </Box>
 
@@ -536,17 +535,17 @@ const CategoriesPage = () => {
                                 color="gray.500"
                             >
                                 <Tag size={48} />
-                        </Box>
+                            </Box>
                             <VStack spacing={2}>
-                        <Text
+                                <Text
                                     fontSize="xl"
                                     fontWeight="bold"
-                            color={textColor}
-                        >
+                                    color={textColor}
+                                >
                                     {searchTerm || filterStatus || filterColor
                                         ? "Tidak ada kategori yang sesuai filter"
                                         : "Belum ada kategori"}
-                        </Text>
+                                </Text>
                                 <Text
                                     color="gray.500"
                                     textAlign="center"
@@ -555,7 +554,7 @@ const CategoriesPage = () => {
                                     {searchTerm || filterStatus || filterColor
                                         ? "Coba ubah filter atau hapus filter untuk melihat semua kategori"
                                         : "Mulai tambahkan kategori pertama untuk mengorganisir buku-buku Anda"}
-                        </Text>
+                                </Text>
                             </VStack>
                             {!searchTerm && !filterStatus && !filterColor && (
                                 <Button
@@ -583,11 +582,11 @@ const CategoriesPage = () => {
                                         <Text fontSize="sm" color="blue.700">
                                             {selectedCategories.length} kategori
                                             dipilih
-                                            </Text>
+                                        </Text>
                                         <HStack spacing={2}>
-                                                        <Button
+                                            <Button
                                                 size="sm"
-                                                            variant="outline"
+                                                variant="outline"
                                                 colorScheme="red"
                                                 leftIcon={<Trash2 size={14} />}
                                                 onClick={() =>
@@ -597,32 +596,32 @@ const CategoriesPage = () => {
                                                 }
                                             >
                                                 Hapus Terpilih
-                                                        </Button>
-                                                        <Button
+                                            </Button>
+                                            <Button
                                                 size="sm"
                                                 variant="outline"
-                                                            onClick={() =>
+                                                onClick={() =>
                                                     setSelectedCategories([])
-                                                            }
-                                                        >
+                                                }
+                                            >
                                                 Batal Pilih
-                                                        </Button>
-                                                    </HStack>
-                                                </HStack>
+                                            </Button>
+                                        </HStack>
+                                    </HStack>
                                 </Box>
-                        )}
+                            )}
 
                             {/* Categories Display */}
                             {viewMode === "grid" ? (
                                 <CategoriesGrid
-                    categories={filteredCategories}
+                                    categories={filteredCategories}
                                     selectedCategories={selectedCategories}
                                     onSelectCategory={handleSelectCategory}
                                     onSelectAll={handleSelectAll}
-                    onEdit={handleEditCategory}
-                    onDelete={handleDeleteCategory}
-                    onView={handleViewCategory}
-                />
+                                    onEdit={handleEditCategory}
+                                    onDelete={handleDeleteCategory}
+                                    onView={handleViewCategory}
+                                />
                             ) : (
                                 <CategoriesTable
                                     categories={filteredCategories}
@@ -695,7 +694,6 @@ const CategoriesPage = () => {
                                 <Button
                                     colorScheme="red"
                                     onClick={() => {
-                                        // TODO: Implement bulk delete
                                         setCategories((prev) =>
                                             prev.filter(
                                                 (cat) =>

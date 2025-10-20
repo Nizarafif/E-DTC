@@ -24,7 +24,6 @@ const AdminDashboard = ({ onLogout }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [activeItem, setActiveItem] = useState("dashboard");
 
-    // Handler untuk navigasi dari dashboard
     const handleDashboardNavigation = (itemId) => {
         setActiveItem(itemId);
     };
@@ -64,10 +63,6 @@ const AdminDashboard = ({ onLogout }) => {
                 { label: "Kelola Buku", href: "#" },
                 { label: "Kelola Isi Buku", href: "#" },
             ],
-            // categories: [
-            //     { label: "Dashboard", href: "#" },
-            //     { label: "Kategori", href: "#" },
-            // ], // Disabled
             users: [
                 { label: "Dashboard", href: "#" },
                 { label: "Pengguna", href: "#" },
@@ -91,7 +86,6 @@ const AdminDashboard = ({ onLogout }) => {
             "books-add": "Tambah Buku",
             "books-content": "Tambah Isi Buku",
             "books-contents": "Kelola Isi Buku",
-            // categories: "Kategori", // Disabled
             users: "Pengguna",
             analytics: "Analitik",
             settings: "Pengaturan",

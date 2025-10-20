@@ -145,7 +145,6 @@ const DashboardOverview = ({ onNavigate }) => {
                     ? await safeJsonParse(usersResponse.value)
                     : [];
 
-            // Log untuk debugging
             console.log("Dashboard data fetched:", {
                 books: books.length,
                 contents: bookContents.length,

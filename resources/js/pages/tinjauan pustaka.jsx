@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-// DocxViewer removed
 import { useNavigate, useParams } from "react-router-dom";
 
-// PDF Image Viewer Component
 const PDFImageViewer = ({
     pdfUrl,
     title,
@@ -20,7 +18,6 @@ const PDFImageViewer = ({
     useEffect(() => {
         const loadPDF = async () => {
             try {
-                // Check cache first
                 if (pdfCache.has(pdfUrl)) {
                     const cachedData = pdfCache.get(pdfUrl);
                     setImages(cachedData.images);
@@ -34,7 +31,6 @@ const PDFImageViewer = ({
                 setIsLoading(true);
                 setError(null);
 
-                // Wait for PDF.js library to be available
                 let attempts = 0;
                 while (!window.pdfjsLib && attempts < 50) {
                     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -46,14 +42,11 @@ const PDFImageViewer = ({
                     throw new Error("PDF.js library not loaded");
                 }
 
-                // Set worker
                 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
 
-                // Load PDF
                 const loadingTask = pdfjsLib.getDocument(pdfUrl);
                 const pdf = await loadingTask.promise;
 
-                // Convert all pages to images
                 const pageImages = [];
                 for (let i = 1; i <= pdf.numPages; i++) {
                     const page = await pdf.getPage(i);
@@ -78,7 +71,6 @@ const PDFImageViewer = ({
                     pageImages.push(canvas.toDataURL("image/png"));
                 }
 
-                // Cache the result
                 const cacheData = {
                     images: pageImages,
                     totalPages: pdf.numPages,
@@ -168,12 +160,10 @@ const TinjauanPustaka = () => {
     const [chapters, setChapters] = useState([]);
     const [activeChapterIndex, setActiveChapterIndex] = useState(0);
     const [pdfContent, setPdfContent] = useState(null);
-    // DOCX content removed
     const [showPdfViewer, setShowPdfViewer] = useState(false);
     const [pdfPages, setPdfPages] = useState([]);
     const [currentPdfPage, setCurrentPdfPage] = useState(1);
     const [totalPdfPages, setTotalPdfPages] = useState(0);
-    // NEW: daftar semua PDF dan PDF aktif yang sedang ditampilkan
     const [pdfChapters, setPdfChapters] = useState([]);
     const [activePdfIndex, setActivePdfIndex] = useState(0);
     const [expandedPdfIndex, setExpandedPdfIndex] = useState(null);
@@ -204,7 +194,6 @@ const TinjauanPustaka = () => {
         totalPages,
     ]);
 
-    // Ambil total halaman untuk PDF aktif dari cache bila tersedia
     const activePdf = pdfChapters[activePdfIndex];
     const activePdfTotalPages = useMemo(() => {
         if (activePdf && pdfCache.has(activePdf.url)) {
@@ -214,7 +203,6 @@ const TinjauanPustaka = () => {
         return totalPdfPages;
     }, [activePdfIndex, pdfChapters, pdfCache, totalPdfPages]);
 
-    // Load PDF.js library
     useEffect(() => {
         const loadPDFJS = () => {
             if (window.pdfjsLib) return;
@@ -240,9 +228,7 @@ const TinjauanPustaka = () => {
                 if (!res.ok) throw new Error("Failed to fetch");
                 const data = await res.json();
                 if (mounted) setBook(data);
-            } catch (_) {
-                // ignore
-            }
+            } catch (_) {}
         };
         fetchBook();
         return () => {
@@ -260,7 +246,6 @@ const TinjauanPustaka = () => {
                 );
                 if (!res.ok) throw new Error("Failed to fetch chapters");
                 const data = await res.json();
-                // Expecting array of { id, chapter_number, chapter_title, content, content_type, pdf_path, docx_path }
                 const sorted = Array.isArray(data)
                     ? [...data].sort((a, b) => {
                           const an = Number(a.chapter_number) || 0;
@@ -273,7 +258,6 @@ const TinjauanPustaka = () => {
                     setChapters(sorted);
                     setActiveChapterIndex(0);
 
-                    // Kumpulkan semua PDF sesuai urutan backend (yang terbaru di bawah)
                     const allPdfChapters = (Array.isArray(data) ? data : [])
                         .filter(
                             (ch) =>
@@ -288,7 +272,6 @@ const TinjauanPustaka = () => {
                         }));
                     setPdfChapters(allPdfChapters);
 
-                    // Pilih PDF pertama sebagai default bila ada
                     if (allPdfChapters.length > 0) {
                         setActivePdfIndex(0);
                         const first = allPdfChapters[0];
@@ -300,8 +283,6 @@ const TinjauanPustaka = () => {
                         setShowPdfViewer(true);
                         setExpandedPdfIndex(0);
                     }
-
-                    // DOCX handling removed
                 }
             } catch (_) {
                 if (mounted) {
@@ -333,7 +314,6 @@ const TinjauanPustaka = () => {
 
     const goNext = () => {
         if (showPdfViewer && pdfContent) {
-            // Navigate PDF pages - gunakan total halaman PDF aktif
             setCurrentPdfPage((page) => {
                 const total = activePdfTotalPages || totalPdfPages || page;
                 if (!total || page >= total) return page;
@@ -349,10 +329,9 @@ const TinjauanPustaka = () => {
         }
     };
 
-    // Prevent PDF reload when switching between chapters
     const handleChapterClick = (idx) => {
         setActiveChapterIndex(idx);
-        setShowPdfViewer(false); // Close PDF viewer when switching to other content
+        setShowPdfViewer(false);
         if (readerRef.current) {
             readerRef.current.scrollTo({ top: 0, behavior: "smooth" });
         }
@@ -414,7 +393,6 @@ const TinjauanPustaka = () => {
                             >
                                 <button
                                     onClick={() => {
-                                        // Toggle expand/collapse; aktifkan PDF bila berbeda
                                         if (activePdfIndex === idx) {
                                             setExpandedPdfIndex((cur) =>
                                                 cur === idx ? null : idx

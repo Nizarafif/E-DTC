@@ -128,7 +128,6 @@ const BooksPage = () => {
     };
 
     const handleViewBook = (book) => {
-        // TODO: Implement view book details
         console.log("View book:", book);
     };
 
